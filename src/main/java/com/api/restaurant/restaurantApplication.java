@@ -1,13 +1,13 @@
-package com.heladeria.inventario;
+package com.api.restaurant;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 
 @SpringBootApplication
-public class InventarioApplication {
+public class restaurantApplication {
 
 	public static void main(String[] args) {
-		SpringApplication.run(InventarioApplication.class, args);
+		SpringApplication.run(restaurantApplication.class, args);
 	}
 
 }
