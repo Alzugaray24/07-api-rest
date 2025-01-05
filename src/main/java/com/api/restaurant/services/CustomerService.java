@@ -4,6 +4,8 @@ import com.api.restaurant.models.Customer;
 import com.api.restaurant.repositories.CustomerRepository;
 import org.springframework.stereotype.Service;
 
+import java.util.List;
+
 @Service
 public class CustomerService {
     private final CustomerRepository customerRepository;
@@ -12,8 +14,8 @@ public class CustomerService {
         this.customerRepository = customerRepository;
     }
 
-    public void saveCustomer(Customer customer) {
-        customerRepository.save(customer);
+    public Customer saveCustomer(Customer customer) {
+        return customerRepository.save(customer);
     }
 
     public Customer getCustomerById(Long id) {
@@ -30,5 +32,9 @@ public class CustomerService {
             x.setType(customer.getType());
             return customerRepository.save(x);
         }).orElseThrow(() -> new RuntimeException("El cliente con el id " + id + " no se ha encontrado"));
+    }
+
+    public List<Customer> getAllCustomers() {
+        return customerRepository.findAll();
     }
 }
