@@ -4,25 +4,24 @@ import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
 
+import java.util.List;
+
 @Entity
 @Getter
 @Setter
-public class Dish {
+public class Menu {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
     private String name;
-    private double price;
 
-    @ManyToOne
-    @JoinColumn(name = "menu_id")
-    private Menu menu;
+    @OneToMany(mappedBy = "menu")
+    private List<Dish> dishes;
 
-    public Dish() {
+    public Menu() {
     }
 
-    public Dish(String name, double price) {
+    public Menu(String name) {
         this.name = name;
-        this.price = price;
     }
 }
