@@ -71,11 +71,6 @@ public class OrderService implements Observable {
     }
 
     @Override
-    public void removeObserver(Observer observer) {
-        observers.remove(observer);
-    }
-
-    @Override
     public void notifyObservers() {
         observers.forEach(observer -> observer.update(orderRepository.findAll().get(orderRepository.findAll().size() - 1)));
     }

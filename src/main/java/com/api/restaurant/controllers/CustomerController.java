@@ -4,6 +4,8 @@ import com.api.restaurant.dto.customer.CustomerRequestDTO;
 import com.api.restaurant.dto.customer.CustomerResponseDTO;
 import com.api.restaurant.models.Customer;
 import com.api.restaurant.services.CustomerService;
+import com.api.restaurant.proxy.CustomerServiceProxy;
+import com.api.restaurant.services.interfaces.ICustomerService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -15,48 +17,38 @@ import java.util.stream.Collectors;
 @RequestMapping("/api/customer")
 public class CustomerController {
 
-    private final CustomerService service;
+    private final ICustomerService customerService;
 
     @Autowired
-    public CustomerController(CustomerService service) {
-        this.service = service;
+    public CustomerController(CustomerService customerService) {
+        this.customerService = new CustomerServiceProxy(customerService);
     }
 
     @PostMapping
     public ResponseEntity<CustomerResponseDTO> saveCustomer(@RequestBody CustomerRequestDTO customerRequest) {
-        Customer customer = new Customer(customerRequest.getName());
-        Customer savedCustomer = service.saveCustomer(customer);
-        CustomerResponseDTO response = new CustomerResponseDTO();
-        response.setId(savedCustomer.getId());
-        response.setName(savedCustomer.getName());
-        response.setType(savedCustomer.getType());
+        Customer customer = new Customer();
+        customer.setName(customerRequest.getName());
+        customer.setType(customerRequest.getType());
+        Customer savedCustomer = customerService.saveCustomer(customer);
+        CustomerResponseDTO response = convertToCustomerResponseDTO(savedCustomer);
         return ResponseEntity.ok(response);
     }
 
     @GetMapping("/{id}")
     public ResponseEntity<CustomerResponseDTO> getCustomerById(@PathVariable Long id) {
-        Customer customer = service.getCustomerById(id);
+        Customer customer = customerService.getCustomerById(id);
         if (customer == null) {
             return ResponseEntity.notFound().build();
         }
-        CustomerResponseDTO response = new CustomerResponseDTO();
-        response.setId(customer.getId());
-        response.setName(customer.getName());
-        response.setType(customer.getType());
+        CustomerResponseDTO response = convertToCustomerResponseDTO(customer);
         return ResponseEntity.ok(response);
     }
 
     @GetMapping
     public ResponseEntity<List<CustomerResponseDTO>> getAllCustomers() {
-        List<Customer> customers = service.getAllCustomers();
+        List<Customer> customers = customerService.getAllCustomers();
         List<CustomerResponseDTO> responses = customers.stream()
-                .map(customer -> {
-                    CustomerResponseDTO response = new CustomerResponseDTO();
-                    response.setId(customer.getId());
-                    response.setName(customer.getName());
-                    response.setType(customer.getType());
-                    return response;
-                })
+                .map(this::convertToCustomerResponseDTO)
                 .collect(Collectors.toList());
         return ResponseEntity.ok(responses);
     }
@@ -65,17 +57,23 @@ public class CustomerController {
     public ResponseEntity<CustomerResponseDTO> updateCustomer(@PathVariable Long id, @RequestBody CustomerRequestDTO customerRequest) {
         Customer updatedCustomer = new Customer();
         updatedCustomer.setName(customerRequest.getName());
-        service.updateCustomer(id, updatedCustomer);
-        CustomerResponseDTO response = new CustomerResponseDTO();
-        response.setId(updatedCustomer.getId());
-        response.setName(updatedCustomer.getName());
-        response.setType(updatedCustomer.getType());
+        updatedCustomer.setType(customerRequest.getType());
+        customerService.updateCustomer(id, updatedCustomer);
+        CustomerResponseDTO response = convertToCustomerResponseDTO(updatedCustomer);
         return ResponseEntity.ok(response);
     }
 
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteCustomer(@PathVariable Long id) {
-        service.deleteCustomer(id);
+        customerService.deleteCustomer(id);
         return ResponseEntity.noContent().build();
+    }
+
+    private CustomerResponseDTO convertToCustomerResponseDTO(Customer customer) {
+        CustomerResponseDTO response = new CustomerResponseDTO();
+        response.setId(customer.getId());
+        response.setName(customer.getName());
+        response.setType(customer.getType());
+        return response;
     }
 }
