@@ -14,6 +14,9 @@ public class Dish {
     private String name;
     private double price;
 
+    @Enumerated(EnumType.STRING)
+    private DishEnum type = DishEnum.COMMON;
+
     @ManyToOne
     @JoinColumn(name = "menu_id")
     private Menu menu;
