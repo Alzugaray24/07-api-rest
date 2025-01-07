@@ -65,6 +65,26 @@ public class OrderController {
         return ResponseEntity.ok(responses);
     }
 
+    @PutMapping("/{id}")
+    public ResponseEntity<OrderResponseDTO> updateOrder(@PathVariable Long id, @RequestBody OrderRequestDTO orderRequest) {
+        Order updatedOrder = new Order();
+        Customer customer = customerService.getCustomerById(orderRequest.getCustomerId());
+        List<Dish> dishes = orderRequest.getDishIds().stream()
+                .map(dishService::getDishById)
+                .collect(Collectors.toList());
+        updatedOrder.setCustomer(customer);
+        updatedOrder.setDishes(dishes);
+        service.updateOrder(id, updatedOrder);
+        OrderResponseDTO response = convertToOrderResponseDTO(updatedOrder);
+        return ResponseEntity.ok(response);
+    }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> deleteOrder(@PathVariable Long id) {
+        service.deleteOrder(id);
+        return ResponseEntity.noContent().build();
+    }
+
     private OrderResponseDTO convertToOrderResponseDTO(Order order) {
         OrderResponseDTO response = new OrderResponseDTO();
         response.setId(order.getId());
