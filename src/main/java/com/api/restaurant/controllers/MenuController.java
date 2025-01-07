@@ -81,7 +81,7 @@ public class MenuController {
         if (dish == null) {
             return ResponseEntity.notFound().build();
         }
-        ICommand<Menu> command = new AddDishToMenuCommand(menuService.getMenuRepository(), menuId, dish);
+        ICommand<Menu> command = new AddDishToMenuCommand(menuService.getMenuRepository(), dishService.getDishRepository(), menuId, dish);
         Menu updatedMenu = command.execute();
         MenuResponseDTO response = convertToMenuResponseDTO(updatedMenu);
         return ResponseEntity.ok(response);

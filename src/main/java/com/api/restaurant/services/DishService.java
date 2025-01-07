@@ -2,11 +2,13 @@ package com.api.restaurant.services;
 
 import com.api.restaurant.models.Dish;
 import com.api.restaurant.repositories.DishRepository;
+import lombok.Getter;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
 
 @Service
+@Getter
 public class DishService {
 
     private final DishRepository dishRepository;
@@ -38,4 +40,5 @@ public class DishService {
             return dishRepository.save(dish);
         }).orElseThrow(() -> new RuntimeException("El plato con el id " + id + " no se ha encontrado"));
     }
+
 }
