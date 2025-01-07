@@ -7,10 +7,7 @@ import com.api.restaurant.models.Menu;
 import com.api.restaurant.models.Dish;
 import com.api.restaurant.services.MenuService;
 import com.api.restaurant.services.DishService;
-import com.api.restaurant.services.menu.SaveMenuCommand;
-import com.api.restaurant.services.menu.GetMenuByIdCommand;
-import com.api.restaurant.services.menu.UpdateMenuCommand;
-import com.api.restaurant.services.menu.DeleteMenuCommand;
+import com.api.restaurant.services.menu.*;
 import com.api.restaurant.services.interfaces.ICommand;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -76,6 +73,18 @@ public class MenuController {
         ICommand<Void> command = new DeleteMenuCommand(menuService.getMenuRepository(), id);
         command.execute();
         return ResponseEntity.noContent().build();
+    }
+
+    @PostMapping("/{menuId}/dishes/{dishId}")
+    public ResponseEntity<MenuResponseDTO> addDishToMenu(@PathVariable Long menuId, @PathVariable Long dishId) {
+        Dish dish = dishService.getDishById(dishId);
+        if (dish == null) {
+            return ResponseEntity.notFound().build();
+        }
+        ICommand<Menu> command = new AddDishToMenuCommand(menuService.getMenuRepository(), menuId, dish);
+        Menu updatedMenu = command.execute();
+        MenuResponseDTO response = convertToMenuResponseDTO(updatedMenu);
+        return ResponseEntity.ok(response);
     }
 
     private MenuResponseDTO convertToMenuResponseDTO(Menu menu) {
