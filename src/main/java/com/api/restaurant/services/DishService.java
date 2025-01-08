@@ -33,11 +33,11 @@ public class DishService {
         dishRepository.deleteById(id);
     }
 
-    public void updateDish(Long id, Dish updatedDish) {
-        dishRepository.findById(id).map(dish -> {
+    public Dish updateDish(Long id, Dish updatedDish) {
+        return dishRepository.findById(id).map(dish -> {
             dish.setName(updatedDish.getName());
             dish.setPrice(updatedDish.getPrice());
-            return dishRepository.save(dish);
+            return dish;
         }).orElseThrow(() -> new RuntimeException("El plato con el id " + id + " no se ha encontrado"));
     }
 

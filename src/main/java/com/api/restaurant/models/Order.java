@@ -19,6 +19,8 @@ public class Order {
     @JoinColumn(name = "customer_id")
     private Customer customer;
 
+    private Double total;
+
     @ManyToMany
     @JoinTable(
             name = "order_dish",

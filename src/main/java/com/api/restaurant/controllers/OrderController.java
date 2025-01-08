@@ -92,6 +92,7 @@ public class OrderController {
         response.setDishes(order.getDishes().stream()
                 .map(DishResponseDTO::new)
                 .collect(Collectors.toList()));
+        response.setTotal(order.getTotal());
         return response;
     }
 }

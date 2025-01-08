@@ -13,4 +13,5 @@ public class OrderResponseDTO {
     private Long id;
     private CustomerResponseDTO customer;
     private List<DishResponseDTO> dishes;
+    private Double total;
 }

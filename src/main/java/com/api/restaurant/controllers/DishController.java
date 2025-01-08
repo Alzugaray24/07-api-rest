@@ -62,8 +62,8 @@ public class DishController {
         Dish updatedDish = new Dish();
         updatedDish.setName(dishRequest.getName());
         updatedDish.setPrice(dishRequest.getPrice());
-        service.updateDish(id, updatedDish);
-        DishResponseDTO response = new DishResponseDTO(updatedDish);
+        Dish newDish = service.updateDish(id, updatedDish);
+        DishResponseDTO response = new DishResponseDTO(newDish);
         return ResponseEntity.ok(response);
     }
 }

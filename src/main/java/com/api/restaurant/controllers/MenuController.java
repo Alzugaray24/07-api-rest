@@ -7,8 +7,6 @@ import com.api.restaurant.models.Menu;
 import com.api.restaurant.models.Dish;
 import com.api.restaurant.services.MenuService;
 import com.api.restaurant.services.DishService;
-import com.api.restaurant.services.menu.*;
-import com.api.restaurant.services.interfaces.ICommand;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -37,16 +35,14 @@ public class MenuController {
                 .map(dishService::getDishById)
                 .collect(Collectors.toList());
         menu.setDishes(dishes);
-        ICommand<Menu> command = new SaveMenuCommand(menuService.getMenuRepository(), menu);
-        Menu savedMenu = command.execute();
+        Menu savedMenu = menuService.saveMenu(menu);
         MenuResponseDTO response = convertToMenuResponseDTO(savedMenu);
         return ResponseEntity.ok(response);
     }
 
     @GetMapping("/{id}")
     public ResponseEntity<MenuResponseDTO> getMenuById(@PathVariable Long id) {
-        ICommand<Menu> command = new GetMenuByIdCommand(menuService.getMenuRepository(), id);
-        Menu menu = command.execute();
+        Menu menu = menuService.getMenuById(id);
         if (menu == null) {
             return ResponseEntity.notFound().build();
         }
@@ -62,16 +58,14 @@ public class MenuController {
                 .map(dishService::getDishById)
                 .collect(Collectors.toList());
         updatedMenu.setDishes(dishes);
-        ICommand<Menu> command = new UpdateMenuCommand(menuService.getMenuRepository(), id, updatedMenu);
-        command.execute();
+        menuService.updateMenu(id, updatedMenu);
         MenuResponseDTO response = convertToMenuResponseDTO(updatedMenu);
         return ResponseEntity.ok(response);
     }
 
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteMenu(@PathVariable Long id) {
-        ICommand<Void> command = new DeleteMenuCommand(menuService.getMenuRepository(), id);
-        command.execute();
+        menuService.deleteMenu(id);
         return ResponseEntity.noContent().build();
     }
 
@@ -81,8 +75,15 @@ public class MenuController {
         if (dish == null) {
             return ResponseEntity.notFound().build();
         }
-        ICommand<Menu> command = new AddDishToMenuCommand(menuService.getMenuRepository(), dishService.getDishRepository(), menuId, dish);
-        Menu updatedMenu = command.execute();
+        Menu menu = menuService.getMenuById(menuId);
+        if (menu == null) {
+            return ResponseEntity.notFound().build();
+        }
+        System.out.println(dish.getMenus());
+        dish.setMenu(menu);
+        System.out.println("asignando plato" + dish.getMenus());
+        dishService.saveDish(dish);
+        Menu updatedMenu = menuService.addDishToMenu(menuId, dish);
         MenuResponseDTO response = convertToMenuResponseDTO(updatedMenu);
         return ResponseEntity.ok(response);
     }

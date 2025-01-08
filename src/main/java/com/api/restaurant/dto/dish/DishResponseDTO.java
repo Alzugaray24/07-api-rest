@@ -16,4 +16,8 @@ public class DishResponseDTO {
         this.name = dish.getName();
         this.price = dish.getPrice();
     }
+
+    public DishResponseDTO() {
+    }
+
 }

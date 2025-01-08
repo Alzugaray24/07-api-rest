@@ -15,7 +15,7 @@ public class Menu {
     private Long id;
     private String name;
 
-    @OneToMany(mappedBy = "menu", fetch = FetchType.EAGER)
+    @ManyToMany
     private List<Dish> dishes;
 
     public Menu() {
