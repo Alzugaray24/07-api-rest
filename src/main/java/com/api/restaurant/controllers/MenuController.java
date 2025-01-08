@@ -53,13 +53,14 @@ public class MenuController {
     @PutMapping("/{id}")
     public ResponseEntity<MenuResponseDTO> updateMenu(@PathVariable Long id, @RequestBody MenuRequestDTO menuRequest) {
         Menu updatedMenu = new Menu();
+        updatedMenu.setId(id); // Set the id here
         updatedMenu.setName(menuRequest.getName());
         List<Dish> dishes = menuRequest.getDishIds().stream()
                 .map(dishService::getDishById)
                 .collect(Collectors.toList());
         updatedMenu.setDishes(dishes);
-        menuService.updateMenu(id, updatedMenu);
-        MenuResponseDTO response = convertToMenuResponseDTO(updatedMenu);
+        Menu savedMenu = menuService.updateMenu(id, updatedMenu);
+        MenuResponseDTO response = convertToMenuResponseDTO(savedMenu);
         return ResponseEntity.ok(response);
     }
 

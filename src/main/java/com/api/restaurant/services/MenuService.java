@@ -25,12 +25,12 @@ public class MenuService {
         return menuRepository.findById(id).orElse(null);
     }
 
-    public void updateMenu(Long id, Menu updatedMenu) {
-        menuRepository.findById(id).ifPresent(menu -> {
-            menu.setName(updatedMenu.getName());
-            menu.setDishes(updatedMenu.getDishes());
-            menuRepository.save(menu);
-        });
+    public Menu updateMenu(Long id, Menu updatedMenu) {
+        return menuRepository.findById(id)
+                .map(menu -> {
+                    menu.setName(updatedMenu.getName());
+                    return menuRepository.save(menu);
+                }).orElseThrow(() -> new RuntimeException("El menu con el id " + id + " no se ha encontrado"));
     }
 
     public void deleteMenu(Long id) {
@@ -38,10 +38,11 @@ public class MenuService {
     }
 
     public Menu addDishToMenu(Long menuId, Dish dish) {
-        Menu menu = menuRepository.findById(menuId).orElseThrow(() -> new RuntimeException("El menu no se encontro"));
+        Menu menu = getMenuById(menuId);
         menu.getDishes().add(dish);
         return menuRepository.save(menu);
     }
+
 
     public List<Menu> getAllMenus() {
         return menuRepository.findAll();

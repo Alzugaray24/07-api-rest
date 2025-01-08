@@ -4,6 +4,7 @@ import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
 
+import java.util.ArrayList;
 import java.util.List;
 
 @Entity
@@ -16,7 +17,7 @@ public class Menu {
     private String name;
 
     @ManyToMany
-    private List<Dish> dishes;
+    private List<Dish> dishes = new ArrayList<>();
 
     public Menu() {
     }

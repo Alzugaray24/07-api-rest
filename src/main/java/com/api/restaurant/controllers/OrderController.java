@@ -11,6 +11,7 @@ import com.api.restaurant.services.OrderService;
 import com.api.restaurant.services.CustomerService;
 import com.api.restaurant.services.DishService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -41,6 +42,9 @@ public class OrderController {
                 .collect(Collectors.toList());
         order.setCustomer(customer);
         order.setDishes(dishes);
+        order.setTotal(dishes.stream()
+                .mapToDouble(Dish::getPrice)
+                .sum());
         Order savedOrder = service.saveOrder(order);
         OrderResponseDTO response = convertToOrderResponseDTO(savedOrder);
         return ResponseEntity.ok(response);
@@ -56,25 +60,22 @@ public class OrderController {
         return ResponseEntity.ok(response);
     }
 
-    @GetMapping
-    public ResponseEntity<List<OrderResponseDTO>> getAllOrders() {
-        List<Order> orders = service.getAllOrders();
-        List<OrderResponseDTO> responses = orders.stream()
-                .map(this::convertToOrderResponseDTO)
-                .collect(Collectors.toList());
-        return ResponseEntity.ok(responses);
-    }
+
 
     @PutMapping("/{id}")
     public ResponseEntity<OrderResponseDTO> updateOrder(@PathVariable Long id, @RequestBody OrderRequestDTO orderRequest) {
-        Order updatedOrder = new Order();
         Customer customer = customerService.getCustomerById(orderRequest.getCustomerId());
         List<Dish> dishes = orderRequest.getDishIds().stream()
                 .map(dishService::getDishById)
                 .collect(Collectors.toList());
+
+        Order updatedOrder = new Order();
+        updatedOrder.setId(id);
         updatedOrder.setCustomer(customer);
         updatedOrder.setDishes(dishes);
+
         service.updateOrder(id, updatedOrder);
+
         OrderResponseDTO response = convertToOrderResponseDTO(updatedOrder);
         return ResponseEntity.ok(response);
     }

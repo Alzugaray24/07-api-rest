@@ -6,6 +6,7 @@ import com.api.restaurant.observer.DishObserver;
 import com.api.restaurant.observer.Observable;
 import com.api.restaurant.observer.Observer;
 import com.api.restaurant.repositories.OrderRepository;
+import lombok.Getter;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -14,6 +15,7 @@ import java.util.List;
 public class OrderService implements Observable {
 
     private final OrderRepository orderRepository;
+    @Getter
     private final List<Observer> observers;
     private final CustomerService customerService;
     private final DishService dishService;
@@ -53,17 +55,16 @@ public class OrderService implements Observable {
         orderRepository.deleteById(id);
     }
 
-    public void updateOrder(Long id, Order updatedOrder) {
-        orderRepository.findById(id).map(order -> {
-            order.setCustomer(updatedOrder.getCustomer());
-            order.setDishes(updatedOrder.getDishes());
-            return orderRepository.save(order);
-        }).orElseThrow(() -> new RuntimeException("El pedido con el id " + id + " no se ha encontrado"));
+    public Order updateOrder(Long id, Order updatedOrder) {
+        return orderRepository.findById(id)
+                .map(order -> {
+                    order.setCustomer(updatedOrder.getCustomer());
+                    order.setDishes(updatedOrder.getDishes());
+                    return orderRepository.save(order);  // Retorna el pedido actualizado
+                })
+                .orElseThrow(() -> new RuntimeException("El pedido con el id " + id + " no se ha encontrado"));
     }
 
-    public List<Order> getAllOrders() {
-        return orderRepository.findAll();
-    }
 
     @Override
     public void addObserver(Observer observer) {
@@ -72,6 +73,12 @@ public class OrderService implements Observable {
 
     @Override
     public void notifyObservers() {
-        observers.forEach(observer -> observer.update(orderRepository.findAll().get(orderRepository.findAll().size() - 1)));
+        List<Order> orders = orderRepository.findAll();
+        if (!orders.isEmpty()) {
+            Order latestOrder = orders.get(orders.size() - 1);
+            observers.forEach(observer -> observer.update(latestOrder));
+        }
+        orderRepository.findAll();
     }
+
 }
