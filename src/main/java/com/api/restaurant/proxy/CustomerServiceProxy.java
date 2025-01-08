@@ -43,10 +43,11 @@ public class CustomerServiceProxy implements ICustomerService {
     }
 
     @Override
-    public void updateCustomer(Long id, Customer updatedCustomer) {
-        customerService.updateCustomer(id, updatedCustomer);
-        customerCache.put(id, updatedCustomer);
+    public Customer updateCustomer(Long id, Customer updatedCustomer) {
+        Customer updated = customerService.updateCustomer(id, updatedCustomer);
+        customerCache.put(id, updated);
         allCustomersCache.clear();
+        return updated;
     }
 
     @Override

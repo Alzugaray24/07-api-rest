@@ -30,8 +30,8 @@ public class CustomerService implements ICustomerService {
     }
 
     @Override
-    public void updateCustomer(Long id, Customer updatedCustomer) {
-        customerRepository.findById(id).map(customer -> {
+    public Customer updateCustomer(Long id, Customer updatedCustomer) {
+        return customerRepository.findById(id).map(customer -> {
             customer.setName(updatedCustomer.getName());
             customer.setType(updatedCustomer.getType());
             return customerRepository.save(customer);

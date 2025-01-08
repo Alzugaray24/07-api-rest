@@ -37,8 +37,7 @@ public class DishService {
         return dishRepository.findById(id).map(dish -> {
             dish.setName(updatedDish.getName());
             dish.setPrice(updatedDish.getPrice());
-            return dish;
+            return dishRepository.save(dish); // Save the modified dish
         }).orElseThrow(() -> new RuntimeException("El plato con el id " + id + " no se ha encontrado"));
     }
-
 }

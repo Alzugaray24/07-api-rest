@@ -7,6 +7,6 @@ public interface ICustomerService {
     Customer saveCustomer(Customer customer);
     Customer getCustomerById(Long id);
     void deleteCustomer(Long id);
-    void updateCustomer(Long id, Customer updatedCustomer);
+    Customer updateCustomer(Long id, Customer updatedCustomer);
     List<Customer> getAllCustomers();
 }

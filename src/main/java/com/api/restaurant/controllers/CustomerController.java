@@ -58,8 +58,8 @@ public class CustomerController {
         Customer updatedCustomer = new Customer();
         updatedCustomer.setName(customerRequest.getName());
         updatedCustomer.setType(customerRequest.getType());
-        customerService.updateCustomer(id, updatedCustomer);
-        CustomerResponseDTO response = convertToCustomerResponseDTO(updatedCustomer);
+        Customer newCustomer = customerService.updateCustomer(id, updatedCustomer);
+        CustomerResponseDTO response = convertToCustomerResponseDTO(newCustomer);
         return ResponseEntity.ok(response);
     }
 
