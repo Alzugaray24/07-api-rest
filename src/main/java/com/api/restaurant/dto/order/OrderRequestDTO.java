@@ -10,4 +10,9 @@ import java.util.List;
 public class OrderRequestDTO {
     private Long customerId;
     private List<Long> dishIds;
+
+    public OrderRequestDTO() {
+    }
+
+
 }

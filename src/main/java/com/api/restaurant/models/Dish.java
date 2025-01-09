@@ -30,10 +30,4 @@ public class Dish {
         this.name = name;
         this.price = price;
     }
-
-    public void setMenu(Menu menu) {
-        this.menus.add(menu);
-        menu.getDishes().add(this);
-    }
-
 }

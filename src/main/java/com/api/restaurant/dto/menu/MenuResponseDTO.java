@@ -12,4 +12,7 @@ public class MenuResponseDTO {
     private Long id;
     private String name;
     private List<DishResponseDTO> dishes;
+
+    public MenuResponseDTO() {
+    }
 }

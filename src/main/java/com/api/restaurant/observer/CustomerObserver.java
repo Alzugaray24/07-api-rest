@@ -23,21 +23,30 @@ public class CustomerObserver implements Observer {
 
     @Override
     public void update(Order order) {
+        updateCustomerTypeIfFrequent();
+        applyDiscountIfFrequent(order);
+        notifyCustomer(order);
+    }
+
+    private void updateCustomerTypeIfFrequent() {
         long orderCount = orderRepository.countByCustomerId(customer.getId());
         if (orderCount >= 10) {
             customer.setType(CustomerEnum.FRECUENT);
-
             customerService.saveCustomer(customer);
         }
+    }
 
+    private void applyDiscountIfFrequent(Order order) {
         if (CustomerEnum.FRECUENT.equals(customer.getType())) {
             double discount = 0.0238;
             double dishesPrice = order.getDishes().stream().map(Dish::getPrice).reduce(0.0, Double::sum);
             double total = dishesPrice - (dishesPrice * discount);
             order.setTotal(total);
-            System.out.println("El precio se actualizo a " + total + " para el cliente " + customer.getName() + "por ser frecuente");
+            System.out.println("El precio se actualizo a " + total + " para el cliente " + customer.getName() + " por ser frecuente");
         }
+    }
 
+    private void notifyCustomer(Order order) {
         System.out.println("El cliente " + customer.getName() + " ha sido notificado sobre el pedido con el id " + order.getId());
     }
 

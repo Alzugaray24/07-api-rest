@@ -8,4 +8,7 @@ import lombok.Setter;
 public class DishRequestDTO {
     private String name;
     private double price;
+
+    public DishRequestDTO() {
+    }
 }

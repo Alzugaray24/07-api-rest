@@ -60,7 +60,7 @@ public class OrderService implements Observable {
                 .map(order -> {
                     order.setCustomer(updatedOrder.getCustomer());
                     order.setDishes(updatedOrder.getDishes());
-                    return orderRepository.save(order);  // Retorna el pedido actualizado
+                    return orderRepository.save(order);
                 })
                 .orElseThrow(() -> new RuntimeException("El pedido con el id " + id + " no se ha encontrado"));
     }

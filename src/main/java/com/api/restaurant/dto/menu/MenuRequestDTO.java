@@ -10,4 +10,7 @@ import java.util.List;
 public class MenuRequestDTO {
     private String name;
     private List<Long> dishIds;
+
+    public MenuRequestDTO() {
+    }
 }

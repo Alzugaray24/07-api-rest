@@ -12,4 +12,7 @@ public class CustomerRequestDTO {
     public CustomerEnum getType() {
         return CustomerEnum.NORMAL;
     }
+
+    public CustomerRequestDTO() {
+    }
 }

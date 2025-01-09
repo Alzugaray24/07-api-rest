@@ -12,6 +12,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 @RestController
@@ -72,21 +73,18 @@ public class MenuController {
 
     @PostMapping("/{menuId}/dishes/{dishId}")
     public ResponseEntity<MenuResponseDTO> addDishToMenu(@PathVariable Long menuId, @PathVariable Long dishId) {
-        Dish dish = dishService.getDishById(dishId);
-        if (dish == null) {
-            return ResponseEntity.notFound().build();
-        }
-        Menu menu = menuService.getMenuById(menuId);
-        if (menu == null) {
-            return ResponseEntity.notFound().build();
-        }
-        System.out.println(dish.getMenus());
-        dish.setMenu(menu);
-        System.out.println("asignando plato" + dish.getMenus());
-        dishService.saveDish(dish);
-        Menu updatedMenu = menuService.addDishToMenu(menuId, dish);
-        MenuResponseDTO response = convertToMenuResponseDTO(updatedMenu);
-        return ResponseEntity.ok(response);
+        return Optional.ofNullable(dishService.getDishById(dishId))
+                .flatMap(dish -> Optional.ofNullable(menuService.getMenuById(menuId))
+                        .map(menu -> {
+                            if (!menu.getDishes().contains(dish)) {
+                                menu.getDishes().add(dish);
+                                dish.getMenus().add(menu);
+                                menuService.saveMenu(menu);
+                                dishService.saveDish(dish);
+                            }
+                            return ResponseEntity.ok(convertToMenuResponseDTO(menu));
+                        }))
+                .orElseGet(() -> ResponseEntity.notFound().build());
     }
 
     private MenuResponseDTO convertToMenuResponseDTO(Menu menu) {

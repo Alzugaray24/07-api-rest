@@ -14,4 +14,7 @@ public class OrderResponseDTO {
     private CustomerResponseDTO customer;
     private List<DishResponseDTO> dishes;
     private Double total;
+
+    public OrderResponseDTO() {
+    }
 }
