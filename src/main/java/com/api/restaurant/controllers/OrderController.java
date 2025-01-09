@@ -11,7 +11,6 @@ import com.api.restaurant.services.OrderService;
 import com.api.restaurant.services.CustomerService;
 import com.api.restaurant.services.DishService;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -22,13 +21,13 @@ import java.util.stream.Collectors;
 @RequestMapping("/api/order")
 public class OrderController {
 
-    private final OrderService service;
+    private final OrderService orderService;
     private final CustomerService customerService;
     private final DishService dishService;
 
     @Autowired
-    public OrderController(OrderService service, CustomerService customerService, DishService dishService) {
-        this.service = service;
+    public OrderController(OrderService orderService, CustomerService customerService, DishService dishService) {
+        this.orderService = orderService;
         this.customerService = customerService;
         this.dishService = dishService;
     }
@@ -45,14 +44,14 @@ public class OrderController {
         order.setTotal(dishes.stream()
                 .mapToDouble(Dish::getPrice)
                 .sum());
-        Order savedOrder = service.saveOrder(order);
+        Order savedOrder = orderService.saveOrder(order);
         OrderResponseDTO response = convertToOrderResponseDTO(savedOrder);
         return ResponseEntity.ok(response);
     }
 
     @GetMapping("/{id}")
     public ResponseEntity<OrderResponseDTO> getOrderById(@PathVariable Long id) {
-        Order order = service.getOrderById(id);
+        Order order = orderService.getOrderById(id);
         if (order == null) {
             return ResponseEntity.notFound().build();
         }
@@ -60,30 +59,46 @@ public class OrderController {
         return ResponseEntity.ok(response);
     }
 
-
-
     @PutMapping("/{id}")
     public ResponseEntity<OrderResponseDTO> updateOrder(@PathVariable Long id, @RequestBody OrderRequestDTO orderRequest) {
         Customer customer = customerService.getCustomerById(orderRequest.getCustomerId());
+        if (customer == null) {
+            return ResponseEntity.notFound().build();
+        }
+
         List<Dish> dishes = orderRequest.getDishIds().stream()
                 .map(dishService::getDishById)
+                .filter(dish -> dish != null)
                 .collect(Collectors.toList());
+
+        if (dishes.isEmpty()) {
+            return ResponseEntity.badRequest().build();
+        }
 
         Order updatedOrder = new Order();
         updatedOrder.setId(id);
         updatedOrder.setCustomer(customer);
         updatedOrder.setDishes(dishes);
+        updatedOrder.setTotal(dishes.stream()
+                .mapToDouble(Dish::getPrice)
+                .sum());
 
-        service.updateOrder(id, updatedOrder);
-
-        OrderResponseDTO response = convertToOrderResponseDTO(updatedOrder);
+        Order newOrder = orderService.updateOrder(id, updatedOrder);
+        if (newOrder == null) {
+            return ResponseEntity.notFound().build();
+        }
+        OrderResponseDTO response = convertToOrderResponseDTO(newOrder);
         return ResponseEntity.ok(response);
     }
 
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteOrder(@PathVariable Long id) {
-        service.deleteOrder(id);
-        return ResponseEntity.noContent().build();
+        try {
+            orderService.deleteOrder(id);
+            return ResponseEntity.noContent().build();
+        } catch (RuntimeException e) {
+            return ResponseEntity.notFound().build();
+        }
     }
 
     private OrderResponseDTO convertToOrderResponseDTO(Order order) {

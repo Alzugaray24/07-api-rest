@@ -6,6 +6,7 @@ import com.api.restaurant.models.Order;
 import com.api.restaurant.observer.Observer;
 import com.api.restaurant.repositories.OrderRepository;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
@@ -35,6 +36,7 @@ class OrderServiceTest {
     }
 
     @Test
+    @DisplayName("Save Order")
     void testSaveOrder() {
         Order order = new Order();
         Customer customer = new Customer();
@@ -58,6 +60,7 @@ class OrderServiceTest {
     }
 
     @Test
+    @DisplayName("Get Order by ID")
     void testGetOrderById() {
         Order order = new Order();
         order.setId(1L);
@@ -71,6 +74,18 @@ class OrderServiceTest {
     }
 
     @Test
+    @DisplayName("Get Order by ID - Not Found")
+    void testGetOrderByIdNotFound() {
+        when(orderRepository.findById(anyLong())).thenReturn(Optional.empty());
+
+        Order foundOrder = orderService.getOrderById(1L);
+
+        assertNull(foundOrder);
+        verify(orderRepository).findById(1L);
+    }
+
+    @Test
+    @DisplayName("Delete Order")
     void testDeleteOrder() {
         doNothing().when(orderRepository).deleteById(anyLong());
 
@@ -80,6 +95,7 @@ class OrderServiceTest {
     }
 
     @Test
+    @DisplayName("Update Order")
     void testUpdateOrder() {
         Order existingOrder = new Order();
         existingOrder.setId(1L);
@@ -108,4 +124,47 @@ class OrderServiceTest {
         verify(orderRepository).findById(1L);
         verify(orderRepository).save(existingOrder);
     }
+
+    @Test
+    @DisplayName("Update Order - Not Found")
+    void testUpdateOrderNotFound() {
+        Order updatedOrder = new Order();
+        updatedOrder.setId(1L);
+
+        when(orderRepository.findById(anyLong())).thenReturn(Optional.empty());
+
+        Exception exception = assertThrows(RuntimeException.class, () -> {
+            orderService.updateOrder(1L, updatedOrder);
+        });
+
+        assertEquals("El pedido con el id 1 no se ha encontrado", exception.getMessage());
+        verify(orderRepository).findById(1L);
+        verify(orderRepository, never()).save(any(Order.class));
+    }
+
+    @Test
+    @DisplayName("Add Observer")
+    void testAddObserver() {
+        Observer observer = mock(Observer.class);
+        orderService.addObserver(observer);
+
+        assertTrue(orderService.getObservers().contains(observer));
+    }
+
+    @Test
+    @DisplayName("Notify Observers")
+    void testNotifyObservers() {
+        Order order = new Order();
+        order.setId(1L);
+        when(orderRepository.findAll()).thenReturn(List.of(order));
+
+        Observer observer = mock(Observer.class);
+        orderService.addObserver(observer);
+
+        orderService.notifyObservers();
+
+        verify(observer).update(order);
+    }
+
+
 }

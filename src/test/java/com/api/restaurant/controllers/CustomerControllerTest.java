@@ -30,7 +30,7 @@ class CustomerControllerTest {
     }
 
     @Test
-    @DisplayName("Save Customer")
+    @DisplayName("Guardar Cliente")
     void testSaveCustomer() {
         CustomerRequestDTO requestDTO = new CustomerRequestDTO();
         requestDTO.setName("John Doe");
@@ -61,7 +61,7 @@ class CustomerControllerTest {
     }
 
     @Test
-    @DisplayName("Get Customer by ID")
+    @DisplayName("Obtener Cliente por ID")
     void testGetCustomerById() {
         Customer customer = new Customer();
         customer.setId(1L);
@@ -87,7 +87,21 @@ class CustomerControllerTest {
     }
 
     @Test
-    @DisplayName("Get All Customers")
+    @DisplayName("Obtener Cliente por ID - No Encontrado")
+    void testGetCustomerByIdNotFound() {
+        when(customerService.getCustomerById(anyLong())).thenReturn(null);
+
+        webTestClient
+                .get()
+                .uri("/api/customer/{id}", 1L)
+                .exchange()
+                .expectStatus().isNotFound();
+
+        verify(customerService).getCustomerById(anyLong());
+    }
+
+    @Test
+    @DisplayName("Obtener Todos los Clientes")
     void testGetAllCustomers() {
         List<Customer> customers = List.of(
                 new Customer("John Doe"),
@@ -115,7 +129,7 @@ class CustomerControllerTest {
     }
 
     @Test
-    @DisplayName("Update Customer")
+    @DisplayName("Actualizar Cliente")
     void testUpdateCustomer() {
         CustomerRequestDTO requestDTO = new CustomerRequestDTO();
         requestDTO.setName("John Doe Updated");
@@ -145,7 +159,26 @@ class CustomerControllerTest {
     }
 
     @Test
-    @DisplayName("Delete Customer")
+    @DisplayName("Actualizar Cliente - No Encontrado")
+    void testUpdateCustomerNotFound() {
+        CustomerRequestDTO requestDTO = new CustomerRequestDTO();
+        requestDTO.setName("John Doe Updated");
+
+        when(customerService.updateCustomer(anyLong(), any(Customer.class))).thenReturn(null);
+
+        webTestClient
+                .put()
+                .uri("/api/customer/{id}", 1L)
+                .contentType(MediaType.APPLICATION_JSON)
+                .bodyValue(requestDTO)
+                .exchange()
+                .expectStatus().isNotFound();
+
+        verify(customerService).updateCustomer(anyLong(), any(Customer.class));
+    }
+
+    @Test
+    @DisplayName("Eliminar Cliente")
     void testDeleteCustomer() {
         doNothing().when(customerService).deleteCustomer(anyLong());
 
@@ -154,6 +187,20 @@ class CustomerControllerTest {
                 .uri("/api/customer/{id}", 1L)
                 .exchange()
                 .expectStatus().isNoContent();
+
+        verify(customerService).deleteCustomer(anyLong());
+    }
+
+    @Test
+    @DisplayName("Eliminar Cliente - No Encontrado")
+    void testDeleteCustomerNotFound() {
+        doThrow(new RuntimeException("Customer not found")).when(customerService).deleteCustomer(anyLong());
+
+        webTestClient
+                .delete()
+                .uri("/api/customer/{id}", 1L)
+                .exchange()
+                .expectStatus().isNotFound();
 
         verify(customerService).deleteCustomer(anyLong());
     }

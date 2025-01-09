@@ -14,7 +14,6 @@ import org.junit.jupiter.api.Test;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.reactive.server.WebTestClient;
 
-import java.util.ArrayList;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -54,6 +53,7 @@ class OrderControllerTest {
         dish2.setId(2L);
         order.setCustomer(customer);
         order.setDishes(List.of(dish1, dish2));
+        order.setTotal(30.0);
 
         when(customerService.getCustomerById(anyLong())).thenReturn(customer);
         when(dishService.getDishById(anyLong())).thenReturn(dish1, dish2);
@@ -72,6 +72,7 @@ class OrderControllerTest {
                     assertEquals(order.getId(), response.getId());
                     assertEquals(customer.getId(), response.getCustomer().getId());
                     assertEquals(2, response.getDishes().size());
+                    assertEquals(30.0, response.getTotal());
                 });
 
         verify(orderService).saveOrder(argThat(argument ->
@@ -84,10 +85,11 @@ class OrderControllerTest {
     void testGetOrderById() {
         Order order = new Order();
         order.setId(1L);
-        order.setDishes(new ArrayList<>());
+        order.setDishes(List.of());
         Customer customer = new Customer();
         customer.setId(1L);
         order.setCustomer(customer);
+        order.setTotal(0.0);
 
         when(orderService.getOrderById(anyLong())).thenReturn(order);
 
@@ -101,13 +103,28 @@ class OrderControllerTest {
                 .value(response -> {
                     assertEquals(order.getId(), response.getId());
                     assertEquals(customer.getId(), response.getCustomer().getId());
+                    assertEquals(0.0, response.getTotal());
                 });
 
         verify(orderService).getOrderById(anyLong());
     }
 
     @Test
-    @DisplayName("Update Order")
+    @DisplayName("Get Order by ID - Not Found")
+    void testGetOrderByIdNotFound() {
+        when(orderService.getOrderById(anyLong())).thenReturn(null);
+
+        webTestClient
+                .get()
+                .uri("/api/order/{id}", 1L)
+                .exchange()
+                .expectStatus().isNotFound();
+
+        verify(orderService).getOrderById(anyLong());
+    }
+
+    @Test
+    @DisplayName("Update Order - Success")
     void testUpdateOrder() {
         OrderRequestDTO requestDTO = new OrderRequestDTO();
         requestDTO.setCustomerId(1L);
@@ -123,6 +140,7 @@ class OrderControllerTest {
         dish2.setId(2L);
         order.setCustomer(customer);
         order.setDishes(List.of(dish1, dish2));
+        order.setTotal(30.0);
 
         when(customerService.getCustomerById(anyLong())).thenReturn(customer);
         when(dishService.getDishById(anyLong())).thenReturn(dish1, dish2);
@@ -140,11 +158,87 @@ class OrderControllerTest {
                 .value(response -> {
                     assertEquals(order.getId(), response.getId());
                     assertEquals(customer.getId(), response.getCustomer().getId());
+                    assertEquals(2, response.getDishes().size());
+                    assertEquals(30.0, response.getTotal());
                 });
 
         verify(orderService).updateOrder(anyLong(), argThat(argument ->
                 argument.getCustomer().getId().equals(requestDTO.getCustomerId())
         ));
+    }
+
+    @Test
+    @DisplayName("Update Order - Not Found")
+    void testUpdateOrderNotFound() {
+        OrderRequestDTO requestDTO = new OrderRequestDTO();
+        requestDTO.setCustomerId(1L);
+        requestDTO.setDishIds(List.of(1L, 2L));
+
+        Customer customer = new Customer();
+        customer.setId(1L);
+        Dish dish1 = new Dish();
+        dish1.setId(1L);
+        Dish dish2 = new Dish();
+        dish2.setId(2L);
+
+        when(customerService.getCustomerById(anyLong())).thenReturn(customer);
+        when(dishService.getDishById(1L)).thenReturn(dish1);
+        when(dishService.getDishById(2L)).thenReturn(dish2);
+        when(orderService.updateOrder(anyLong(), any(Order.class))).thenReturn(null);
+
+        webTestClient
+                .put()
+                .uri("/api/order/{id}", 1L)
+                .contentType(MediaType.APPLICATION_JSON)
+                .bodyValue(requestDTO)
+                .exchange()
+                .expectStatus().isNotFound();
+
+        verify(orderService).updateOrder(anyLong(), any(Order.class));
+    }
+
+    @Test
+    @DisplayName("Update Order - Customer Not Found")
+    void testUpdateOrderCustomerNotFound() {
+        OrderRequestDTO requestDTO = new OrderRequestDTO();
+        requestDTO.setCustomerId(1L);
+        requestDTO.setDishIds(List.of(1L, 2L));
+
+        when(customerService.getCustomerById(anyLong())).thenReturn(null);
+
+        webTestClient
+                .put()
+                .uri("/api/order/{id}", 1L)
+                .contentType(MediaType.APPLICATION_JSON)
+                .bodyValue(requestDTO)
+                .exchange()
+                .expectStatus().isNotFound();
+
+        verify(orderService, never()).updateOrder(anyLong(), any(Order.class));
+    }
+
+    @Test
+    @DisplayName("Update Order - Dishes Not Found")
+    void testUpdateOrderDishesNotFound() {
+        OrderRequestDTO requestDTO = new OrderRequestDTO();
+        requestDTO.setCustomerId(1L);
+        requestDTO.setDishIds(List.of(1L, 2L));
+
+        Customer customer = new Customer();
+        customer.setId(1L);
+
+        when(customerService.getCustomerById(anyLong())).thenReturn(customer);
+        when(dishService.getDishById(anyLong())).thenReturn(null);
+
+        webTestClient
+                .put()
+                .uri("/api/order/{id}", 1L)
+                .contentType(MediaType.APPLICATION_JSON)
+                .bodyValue(requestDTO)
+                .exchange()
+                .expectStatus().isBadRequest();
+
+        verify(orderService, never()).updateOrder(anyLong(), any(Order.class));
     }
 
     @Test
@@ -157,6 +251,20 @@ class OrderControllerTest {
                 .uri("/api/order/{id}", 1L)
                 .exchange()
                 .expectStatus().isNoContent();
+
+        verify(orderService).deleteOrder(anyLong());
+    }
+
+    @Test
+    @DisplayName("Delete Order - Not Found")
+    void testDeleteOrderNotFound() {
+        doThrow(new RuntimeException("Order not found")).when(orderService).deleteOrder(anyLong());
+
+        webTestClient
+                .delete()
+                .uri("/api/order/{id}", 1L)
+                .exchange()
+                .expectStatus().isNotFound();
 
         verify(orderService).deleteOrder(anyLong());
     }

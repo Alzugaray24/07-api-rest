@@ -51,19 +51,26 @@ public class DishController {
         return ResponseEntity.ok(responses);
     }
 
-    @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deleteDish(@PathVariable Long id) {
-        service.deleteDish(id);
-        return ResponseEntity.noContent().build();
-    }
-
     @PutMapping("/{id}")
     public ResponseEntity<DishResponseDTO> updateDish(@PathVariable Long id, @RequestBody DishRequestDTO dishRequest) {
         Dish updatedDish = new Dish();
         updatedDish.setName(dishRequest.getName());
         updatedDish.setPrice(dishRequest.getPrice());
         Dish newDish = service.updateDish(id, updatedDish);
+        if (newDish == null) {
+            return ResponseEntity.notFound().build();
+        }
         DishResponseDTO response = new DishResponseDTO(newDish);
         return ResponseEntity.ok(response);
+    }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> deleteDish(@PathVariable Long id) {
+        try {
+            service.deleteDish(id);
+            return ResponseEntity.noContent().build();
+        } catch (RuntimeException e) {
+            return ResponseEntity.notFound().build();
+        }
     }
 }

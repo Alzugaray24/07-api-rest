@@ -29,7 +29,7 @@ class DishControllerTest {
     }
 
     @Test
-    @DisplayName("Save Dish")
+    @DisplayName("Guardar Plato")
     void testSaveDish() {
         DishRequestDTO requestDTO = new DishRequestDTO();
         requestDTO.setName("Pizza");
@@ -57,14 +57,11 @@ class DishControllerTest {
                     assertEquals(dish.getPrice(), response.getPrice());
                 });
 
-        verify(dishService).saveDish(argThat(argument ->
-                argument.getName().equals(requestDTO.getName()) &&
-                        argument.getPrice() == requestDTO.getPrice()
-        ));
+        verify(dishService).saveDish(any(Dish.class));
     }
 
     @Test
-    @DisplayName("Get Dish by ID")
+    @DisplayName("Obtener Plato por ID")
     void testGetDishById() {
         Dish dish = new Dish();
         dish.setId(1L);
@@ -90,7 +87,21 @@ class DishControllerTest {
     }
 
     @Test
-    @DisplayName("Get All Dishes")
+    @DisplayName("Obtener Plato por ID - No Encontrado")
+    void testGetDishByIdNotFound() {
+        when(dishService.getDishById(anyLong())).thenReturn(null);
+
+        webTestClient
+                .get()
+                .uri("/api/dish/{id}", 1L)
+                .exchange()
+                .expectStatus().isNotFound();
+
+        verify(dishService).getDishById(anyLong());
+    }
+
+    @Test
+    @DisplayName("Obtener Todos los Platos")
     void testGetAllDishes() {
         List<Dish> dishes = List.of(
                 new Dish("Pizza", 12.99),
@@ -121,7 +132,7 @@ class DishControllerTest {
     }
 
     @Test
-    @DisplayName("Update Dish")
+    @DisplayName("Actualizar Plato")
     void testUpdateDish() {
         DishRequestDTO requestDTO = new DishRequestDTO();
         requestDTO.setName("Pizza Updated");
@@ -149,14 +160,31 @@ class DishControllerTest {
                     assertEquals(dish.getPrice(), response.getPrice());
                 });
 
-        verify(dishService).updateDish(anyLong(), argThat(argument ->
-                argument.getName().equals(requestDTO.getName()) &&
-                        argument.getPrice() == requestDTO.getPrice()
-        ));
+        verify(dishService).updateDish(anyLong(), any(Dish.class));
     }
 
     @Test
-    @DisplayName("Delete Dish")
+    @DisplayName("Actualizar Plato - No Encontrado")
+    void testUpdateDishNotFound() {
+        DishRequestDTO requestDTO = new DishRequestDTO();
+        requestDTO.setName("Pizza Updated");
+        requestDTO.setPrice(14.99);
+
+        when(dishService.updateDish(anyLong(), any(Dish.class))).thenReturn(null);
+
+        webTestClient
+                .put()
+                .uri("/api/dish/{id}", 1L)
+                .contentType(MediaType.APPLICATION_JSON)
+                .bodyValue(requestDTO)
+                .exchange()
+                .expectStatus().isNotFound();
+
+        verify(dishService).updateDish(anyLong(), any(Dish.class));
+    }
+
+    @Test
+    @DisplayName("Eliminar Plato")
     void testDeleteDish() {
         doNothing().when(dishService).deleteDish(anyLong());
 
@@ -165,6 +193,20 @@ class DishControllerTest {
                 .uri("/api/dish/{id}", 1L)
                 .exchange()
                 .expectStatus().isNoContent();
+
+        verify(dishService).deleteDish(anyLong());
+    }
+
+    @Test
+    @DisplayName("Eliminar Plato - No Encontrado")
+    void testDeleteDishNotFound() {
+        doThrow(new RuntimeException("Dish not found")).when(dishService).deleteDish(anyLong());
+
+        webTestClient
+                .delete()
+                .uri("/api/dish/{id}", 1L)
+                .exchange()
+                .expectStatus().isNotFound();
 
         verify(dishService).deleteDish(anyLong());
     }

@@ -11,8 +11,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
 import java.util.stream.Collectors;
 
 @RestController
@@ -51,40 +51,66 @@ public class MenuController {
         return ResponseEntity.ok(response);
     }
 
+    @GetMapping
+    public ResponseEntity<List<MenuResponseDTO>> getAllMenus() {
+        List<Menu> menus = menuService.getAllMenus();
+        List<MenuResponseDTO> responses = menus.stream()
+                .map(this::convertToMenuResponseDTO)
+                .collect(Collectors.toList());
+        return ResponseEntity.ok(responses);
+    }
+
     @PutMapping("/{id}")
     public ResponseEntity<MenuResponseDTO> updateMenu(@PathVariable Long id, @RequestBody MenuRequestDTO menuRequest) {
         Menu updatedMenu = new Menu();
-        updatedMenu.setId(id); // Set the id here
+        updatedMenu.setId(id);
         updatedMenu.setName(menuRequest.getName());
         List<Dish> dishes = menuRequest.getDishIds().stream()
                 .map(dishService::getDishById)
                 .collect(Collectors.toList());
         updatedMenu.setDishes(dishes);
-        Menu savedMenu = menuService.updateMenu(id, updatedMenu);
-        MenuResponseDTO response = convertToMenuResponseDTO(savedMenu);
+        Menu newMenu = menuService.updateMenu(id, updatedMenu);
+        if (newMenu == null) {
+            return ResponseEntity.notFound().build();
+        }
+        MenuResponseDTO response = convertToMenuResponseDTO(newMenu);
         return ResponseEntity.ok(response);
     }
 
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteMenu(@PathVariable Long id) {
-        menuService.deleteMenu(id);
-        return ResponseEntity.noContent().build();
+        try {
+            menuService.deleteMenu(id);
+            return ResponseEntity.noContent().build();
+        } catch (RuntimeException e) {
+            return ResponseEntity.notFound().build();
+        }
     }
 
     @PostMapping("/{menuId}/dishes/{dishId}")
     public ResponseEntity<MenuResponseDTO> addDishToMenu(@PathVariable Long menuId, @PathVariable Long dishId) {
-        return Optional.ofNullable(dishService.getDishById(dishId))
-                .flatMap(dish -> Optional.ofNullable(menuService.getMenuById(menuId))
-                        .map(menu -> {
-                            if (!menu.getDishes().contains(dish)) {
-                                menu.getDishes().add(dish);
-                                dish.getMenus().add(menu);
-                                menuService.saveMenu(menu);
-                                dishService.saveDish(dish);
-                            }
-                            return ResponseEntity.ok(convertToMenuResponseDTO(menu));
-                        }))
-                .orElseGet(() -> ResponseEntity.notFound().build());
+        Dish dish = dishService.getDishById(dishId);
+        Menu menu = menuService.getMenuById(menuId);
+
+        if (dish == null || menu == null) {
+            return ResponseEntity.notFound().build();
+        }
+
+        addDishToMenu(menu, dish);
+
+        MenuResponseDTO response = convertToMenuResponseDTO(menu);
+        return ResponseEntity.ok(response);
+    }
+
+    private void addDishToMenu(Menu menu, Dish dish) {
+        List<Dish> dishes = new ArrayList<>(menu.getDishes());
+        if (!dishes.contains(dish)) {
+            dishes.add(dish);
+            menu.setDishes(dishes);
+            dish.getMenus().add(menu);
+            menuService.saveMenu(menu);
+            dishService.saveDish(dish);
+        }
     }
 
     private MenuResponseDTO convertToMenuResponseDTO(Menu menu) {

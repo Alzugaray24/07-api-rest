@@ -59,14 +59,21 @@ public class CustomerController {
         updatedCustomer.setName(customerRequest.getName());
         updatedCustomer.setType(customerRequest.getType());
         Customer newCustomer = customerService.updateCustomer(id, updatedCustomer);
+        if (newCustomer == null) {
+            return ResponseEntity.notFound().build();
+        }
         CustomerResponseDTO response = convertToCustomerResponseDTO(newCustomer);
         return ResponseEntity.ok(response);
     }
 
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteCustomer(@PathVariable Long id) {
-        customerService.deleteCustomer(id);
-        return ResponseEntity.noContent().build();
+        try {
+            customerService.deleteCustomer(id);
+            return ResponseEntity.noContent().build();
+        } catch (RuntimeException e) {
+            return ResponseEntity.notFound().build();
+        }
     }
 
     private CustomerResponseDTO convertToCustomerResponseDTO(Customer customer) {
