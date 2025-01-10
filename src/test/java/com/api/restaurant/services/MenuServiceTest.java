@@ -4,6 +4,7 @@ import com.api.restaurant.models.Menu;
 import com.api.restaurant.models.Dish;
 import com.api.restaurant.repositories.MenuRepository;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
@@ -26,20 +27,22 @@ class MenuServiceTest {
     }
 
     @Test
+    @DisplayName("Guardar Menú")
     void testSaveMenu() {
         Menu menu = new Menu();
-        menu.setName("Menu 1");
+        menu.setName("Menú 1");
 
         when(menuRepository.save(any(Menu.class))).thenReturn(menu);
 
         Menu savedMenu = menuService.saveMenu(menu);
 
         assertNotNull(savedMenu);
-        assertEquals("Menu 1", savedMenu.getName());
+        assertEquals("Menú 1", savedMenu.getName());
         verify(menuRepository).save(menu);
     }
 
     @Test
+    @DisplayName("Obtener Menú por ID")
     void testGetMenuById() {
         Menu menu = new Menu();
         menu.setId(1L);
@@ -53,14 +56,15 @@ class MenuServiceTest {
     }
 
     @Test
+    @DisplayName("Actualizar Menú")
     void testUpdateMenu() {
         Menu existingMenu = new Menu();
         existingMenu.setId(1L);
-        existingMenu.setName("Menu 1");
+        existingMenu.setName("Menú 1");
 
         Menu updatedMenu = new Menu();
         updatedMenu.setId(1L);
-        updatedMenu.setName("Updated Menu");
+        updatedMenu.setName("Menú Actualizado");
 
         when(menuRepository.findById(anyLong())).thenReturn(Optional.of(existingMenu));
         when(menuRepository.save(any(Menu.class))).thenReturn(updatedMenu);
@@ -68,12 +72,13 @@ class MenuServiceTest {
         Menu result = menuService.updateMenu(1L, updatedMenu);
 
         assertNotNull(result);
-        assertEquals("Updated Menu", result.getName());
+        assertEquals("Menú Actualizado", result.getName());
         verify(menuRepository).findById(1L);
         verify(menuRepository).save(existingMenu);
     }
 
     @Test
+    @DisplayName("Eliminar Menú")
     void testDeleteMenu() {
         doNothing().when(menuRepository).deleteById(anyLong());
 
@@ -83,6 +88,7 @@ class MenuServiceTest {
     }
 
     @Test
+    @DisplayName("Agregar Plato al Menú")
     void testAddDishToMenu() {
         Menu menu = new Menu();
         menu.setId(1L);
@@ -101,6 +107,7 @@ class MenuServiceTest {
     }
 
     @Test
+    @DisplayName("Obtener Todos los Menús")
     void testGetAllMenus() {
         Menu menu1 = new Menu();
         menu1.setId(1L);

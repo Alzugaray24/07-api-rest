@@ -30,7 +30,7 @@ class DishObserverTest {
     }
 
     @Test
-    @DisplayName("Update Dish Type to Popular")
+    @DisplayName("Actualizar Tipo de Plato a Popular")
     void testUpdateDishTypeToPopular() {
         when(orderRepository.countByDishes_Id(dish.getId())).thenReturn(101L);
 
@@ -41,7 +41,7 @@ class DishObserverTest {
     }
 
     @Test
-    @DisplayName("Increase Price for Popular Dish")
+    @DisplayName("Incrementar Precio de Plato Popular")
     void testIncreasePriceForPopularDish() {
         dish.setType(DishEnum.POPULAR);
         dish.setPrice(10.0);
@@ -52,7 +52,7 @@ class DishObserverTest {
     }
 
     @Test
-    @DisplayName("Notify Dish Update")
+    @DisplayName("notificar actualización de plato")
     void testNotifyDishUpdate() {
         dish.setName("Pizza");
 

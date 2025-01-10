@@ -27,7 +27,7 @@ class CustomerServiceTest {
     }
 
     @Test
-    @DisplayName("Save Customer")
+    @DisplayName("Guardar Cliente")
     void testSaveCustomer() {
         Customer customer = new Customer();
         customer.setName("John Doe");
@@ -41,7 +41,7 @@ class CustomerServiceTest {
     }
 
     @Test
-    @DisplayName("Get Customer by ID")
+    @DisplayName("Obtener Cliente por ID")
     void testGetCustomerById() {
         Customer customer = new Customer();
         customer.setId(1L);
@@ -57,7 +57,7 @@ class CustomerServiceTest {
     }
 
     @Test
-    @DisplayName("Get Customer by ID - Not Found")
+    @DisplayName("Obtener Cliente por ID - No Encontrado")
     void testGetCustomerByIdNotFound() {
         when(customerRepository.findById(anyLong())).thenReturn(Optional.empty());
 
@@ -68,7 +68,7 @@ class CustomerServiceTest {
     }
 
     @Test
-    @DisplayName("Get All Customers")
+    @DisplayName("Obtener Todos los Clientes")
     void testGetAllCustomers() {
         List<Customer> customers = List.of(
                 new Customer("John Doe"),
@@ -88,7 +88,7 @@ class CustomerServiceTest {
     }
 
     @Test
-    @DisplayName("Update Customer")
+    @DisplayName("Actualizar Cliente")
     void testUpdateCustomer() {
         Customer customer = new Customer();
         customer.setId(1L);
@@ -108,7 +108,7 @@ class CustomerServiceTest {
     }
 
     @Test
-    @DisplayName("Update Customer - Not Found")
+    @DisplayName("Actualizar Cliente - No Encontrado")
     void testUpdateCustomerNotFound() {
         when(customerRepository.findById(anyLong())).thenReturn(Optional.empty());
 
@@ -120,7 +120,7 @@ class CustomerServiceTest {
     }
 
     @Test
-    @DisplayName("Delete Customer")
+    @DisplayName("Eliminar Cliente")
     void testDeleteCustomer() {
         doNothing().when(customerRepository).deleteById(anyLong());
 

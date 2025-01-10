@@ -37,7 +37,7 @@ class OrderControllerTest {
     }
 
     @Test
-    @DisplayName("Save Order")
+    @DisplayName("Guardar Pedido")
     void testSaveOrder() {
         OrderRequestDTO requestDTO = new OrderRequestDTO();
         requestDTO.setCustomerId(1L);
@@ -81,7 +81,7 @@ class OrderControllerTest {
     }
 
     @Test
-    @DisplayName("Get Order by ID")
+    @DisplayName("Obtener Pedido por ID")
     void testGetOrderById() {
         Order order = new Order();
         order.setId(1L);
@@ -110,7 +110,7 @@ class OrderControllerTest {
     }
 
     @Test
-    @DisplayName("Get Order by ID - Not Found")
+    @DisplayName("Obtener Pedido por ID - No Encontrado")
     void testGetOrderByIdNotFound() {
         when(orderService.getOrderById(anyLong())).thenReturn(null);
 
@@ -124,7 +124,7 @@ class OrderControllerTest {
     }
 
     @Test
-    @DisplayName("Update Order - Success")
+    @DisplayName("Actualizar Pedido - Éxito")
     void testUpdateOrder() {
         OrderRequestDTO requestDTO = new OrderRequestDTO();
         requestDTO.setCustomerId(1L);
@@ -168,7 +168,7 @@ class OrderControllerTest {
     }
 
     @Test
-    @DisplayName("Update Order - Not Found")
+    @DisplayName("Actualizar Pedido - No Encontrado")
     void testUpdateOrderNotFound() {
         OrderRequestDTO requestDTO = new OrderRequestDTO();
         requestDTO.setCustomerId(1L);
@@ -198,7 +198,7 @@ class OrderControllerTest {
     }
 
     @Test
-    @DisplayName("Update Order - Customer Not Found")
+    @DisplayName("Actualizar Pedido - Cliente No Encontrado")
     void testUpdateOrderCustomerNotFound() {
         OrderRequestDTO requestDTO = new OrderRequestDTO();
         requestDTO.setCustomerId(1L);
@@ -218,7 +218,7 @@ class OrderControllerTest {
     }
 
     @Test
-    @DisplayName("Update Order - Dishes Not Found")
+    @DisplayName("Actualizar Pedido - Platos No Encontrados")
     void testUpdateOrderDishesNotFound() {
         OrderRequestDTO requestDTO = new OrderRequestDTO();
         requestDTO.setCustomerId(1L);
@@ -242,7 +242,7 @@ class OrderControllerTest {
     }
 
     @Test
-    @DisplayName("Delete Order")
+    @DisplayName("Eliminar Pedido")
     void testDeleteOrder() {
         doNothing().when(orderService).deleteOrder(anyLong());
 
@@ -256,9 +256,9 @@ class OrderControllerTest {
     }
 
     @Test
-    @DisplayName("Delete Order - Not Found")
+    @DisplayName("Eliminar Pedido - No Encontrado")
     void testDeleteOrderNotFound() {
-        doThrow(new RuntimeException("Order not found")).when(orderService).deleteOrder(anyLong());
+        doThrow(new RuntimeException("Pedido no encontrado")).when(orderService).deleteOrder(anyLong());
 
         webTestClient
                 .delete()

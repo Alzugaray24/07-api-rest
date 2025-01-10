@@ -36,7 +36,7 @@ class OrderServiceTest {
     }
 
     @Test
-    @DisplayName("Save Order")
+    @DisplayName("Guardar Pedido")
     void testSaveOrder() {
         Order order = new Order();
         Customer customer = new Customer();
@@ -60,7 +60,7 @@ class OrderServiceTest {
     }
 
     @Test
-    @DisplayName("Get Order by ID")
+    @DisplayName("Obtener Pedido por ID")
     void testGetOrderById() {
         Order order = new Order();
         order.setId(1L);
@@ -74,7 +74,7 @@ class OrderServiceTest {
     }
 
     @Test
-    @DisplayName("Get Order by ID - Not Found")
+    @DisplayName("Obtener Pedido por ID - No Encontrado")
     void testGetOrderByIdNotFound() {
         when(orderRepository.findById(anyLong())).thenReturn(Optional.empty());
 
@@ -85,7 +85,7 @@ class OrderServiceTest {
     }
 
     @Test
-    @DisplayName("Delete Order")
+    @DisplayName("Eliminar Pedido")
     void testDeleteOrder() {
         doNothing().when(orderRepository).deleteById(anyLong());
 
@@ -95,7 +95,7 @@ class OrderServiceTest {
     }
 
     @Test
-    @DisplayName("Update Order")
+    @DisplayName("Actualizar Pedido")
     void testUpdateOrder() {
         Order existingOrder = new Order();
         existingOrder.setId(1L);
@@ -126,7 +126,7 @@ class OrderServiceTest {
     }
 
     @Test
-    @DisplayName("Update Order - Not Found")
+    @DisplayName("Actualizar Pedido - No Encontrado")
     void testUpdateOrderNotFound() {
         Order updatedOrder = new Order();
         updatedOrder.setId(1L);
@@ -143,7 +143,7 @@ class OrderServiceTest {
     }
 
     @Test
-    @DisplayName("Add Observer")
+    @DisplayName("Agregar Observador")
     void testAddObserver() {
         Observer observer = mock(Observer.class);
         orderService.addObserver(observer);
@@ -152,7 +152,7 @@ class OrderServiceTest {
     }
 
     @Test
-    @DisplayName("Notify Observers")
+    @DisplayName("Notificar Observadores")
     void testNotifyObservers() {
         Order order = new Order();
         order.setId(1L);
@@ -165,6 +165,4 @@ class OrderServiceTest {
 
         verify(observer).update(order);
     }
-
-
 }

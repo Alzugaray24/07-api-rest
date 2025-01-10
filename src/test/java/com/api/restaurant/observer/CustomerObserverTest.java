@@ -33,7 +33,7 @@ class CustomerObserverTest {
     }
 
     @Test
-    @DisplayName("Update Customer Type to Frequent")
+    @DisplayName("Actualizar Tipo de Cliente a Frecuente")
     void testUpdateCustomerTypeToFrequent() {
         when(orderRepository.countByCustomerId(customer.getId())).thenReturn(10L);
 
@@ -46,7 +46,7 @@ class CustomerObserverTest {
     }
 
     @Test
-    @DisplayName("Apply Discount to Frequent Customer")
+    @DisplayName("Aplicar Descuento a Cliente Frecuente")
     void testApplyDiscountToFrequentCustomer() {
         customer.setType(CustomerEnum.FRECUENT);
         Order order = new Order();
@@ -62,7 +62,7 @@ class CustomerObserverTest {
     }
 
     @Test
-    @DisplayName("Notify Customer")
+    @DisplayName("Notificar Cliente")
     void testNotifyCustomer() {
         Order order = new Order();
         order.setId(1L);
@@ -70,6 +70,5 @@ class CustomerObserverTest {
 
         customerObserver.update(order);
 
-        // No assertions needed, just ensure no exceptions are thrown
     }
 }

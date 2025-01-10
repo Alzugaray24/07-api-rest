@@ -15,6 +15,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 @RestController
@@ -61,34 +62,46 @@ public class OrderController {
 
     @PutMapping("/{id}")
     public ResponseEntity<OrderResponseDTO> updateOrder(@PathVariable Long id, @RequestBody OrderRequestDTO orderRequest) {
-        Customer customer = customerService.getCustomerById(orderRequest.getCustomerId());
+        Customer customer = getCustomer(orderRequest.getCustomerId());
         if (customer == null) {
             return ResponseEntity.notFound().build();
         }
 
-        List<Dish> dishes = orderRequest.getDishIds().stream()
-                .map(dishService::getDishById)
-                .filter(dish -> dish != null)
-                .collect(Collectors.toList());
-
+        List<Dish> dishes = getDishes(orderRequest.getDishIds());
         if (dishes.isEmpty()) {
             return ResponseEntity.badRequest().build();
         }
 
-        Order updatedOrder = new Order();
-        updatedOrder.setId(id);
-        updatedOrder.setCustomer(customer);
-        updatedOrder.setDishes(dishes);
-        updatedOrder.setTotal(dishes.stream()
-                .mapToDouble(Dish::getPrice)
-                .sum());
-
+        Order updatedOrder = createUpdatedOrder(id, customer, dishes);
         Order newOrder = orderService.updateOrder(id, updatedOrder);
         if (newOrder == null) {
             return ResponseEntity.notFound().build();
         }
+
         OrderResponseDTO response = convertToOrderResponseDTO(newOrder);
         return ResponseEntity.ok(response);
+    }
+
+    private Customer getCustomer(Long customerId) {
+        return customerService.getCustomerById(customerId);
+    }
+
+    private List<Dish> getDishes(List<Long> dishIds) {
+        return dishIds.stream()
+                .map(dishService::getDishById)
+                .filter(Objects::nonNull)
+                .collect(Collectors.toList());
+    }
+
+    private Order createUpdatedOrder(Long id, Customer customer, List<Dish> dishes) {
+        Order order = new Order();
+        order.setId(id);
+        order.setCustomer(customer);
+        order.setDishes(dishes);
+        order.setTotal(dishes.stream()
+                .mapToDouble(Dish::getPrice)
+                .sum());
+        return order;
     }
 
     @DeleteMapping("/{id}")

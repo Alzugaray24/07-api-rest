@@ -27,7 +27,7 @@ class DishServiceTest {
     }
 
     @Test
-    @DisplayName("Save Dish")
+    @DisplayName("Guardar Plato")
     void testSaveDish() {
         Dish dish = new Dish("Pizza", 12.99);
         when(dishRepository.save(any(Dish.class))).thenReturn(dish);
@@ -40,7 +40,7 @@ class DishServiceTest {
     }
 
     @Test
-    @DisplayName("Get Dish by ID")
+    @DisplayName("Obtener Plato por ID")
     void testGetDishById() {
         Dish dish = new Dish("Pizza", 12.99);
         when(dishRepository.findById(anyLong())).thenReturn(Optional.of(dish));
@@ -53,12 +53,12 @@ class DishServiceTest {
     }
 
     @Test
-    @DisplayName("Get All Dishes")
+    @DisplayName("Obtener Todos los Platos")
     void testGetAllDishes() {
         List<Dish> dishes = List.of(
                 new Dish("Pizza", 12.99),
                 new Dish("Pasta", 8.99),
-                new Dish("Salad", 5.99)
+                new Dish("Ensalada", 5.99)
         );
         when(dishRepository.findAll()).thenReturn(dishes);
 
@@ -70,23 +70,23 @@ class DishServiceTest {
     }
 
     @Test
-    @DisplayName("Update Dish")
+    @DisplayName("Actualizar Plato")
     void testUpdateDish() {
         Dish existingDish = new Dish("Pizza", 12.99);
         when(dishRepository.findById(anyLong())).thenReturn(Optional.of(existingDish));
         when(dishRepository.save(any(Dish.class))).thenReturn(existingDish);
 
-        Dish updatedDish = new Dish("Updated Pizza", 15.99);
+        Dish updatedDish = new Dish("Pizza Actualizada", 15.99);
         Dish result = dishService.updateDish(1L, updatedDish);
 
-        assertEquals("Updated Pizza", result.getName());
+        assertEquals("Pizza Actualizada", result.getName());
         assertEquals(15.99, result.getPrice());
         verify(dishRepository, times(1)).findById(anyLong());
         verify(dishRepository, times(1)).save(any(Dish.class));
     }
 
     @Test
-    @DisplayName("Delete Dish")
+    @DisplayName("Eliminar Plato")
     void testDeleteDish() {
         doNothing().when(dishRepository).deleteById(anyLong());
 
@@ -96,11 +96,11 @@ class DishServiceTest {
     }
 
     @Test
-    @DisplayName("Update Dish - Not Found")
+    @DisplayName("Actualizar Plato - No Encontrado")
     void testUpdateDishNotFound() {
         when(dishRepository.findById(anyLong())).thenReturn(Optional.empty());
 
-        Dish updatedDish = new Dish("Updated Pizza", 15.99);
+        Dish updatedDish = new Dish("Pizza Actualizada", 15.99);
 
         assertThrows(RuntimeException.class, () -> dishService.updateDish(1L, updatedDish));
         verify(dishRepository, times(1)).findById(anyLong());
