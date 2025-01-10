@@ -19,7 +19,7 @@ public class Customer {
     private CustomerEnum type;
 
     public Customer() {
-        this.type = CustomerEnum.NORMAL;
+
     }
 
     public Customer(String name) {
