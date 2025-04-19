@@ -10,6 +10,7 @@ El término "API REST" se usa para referirse a una API que implementa parcialmen
 Es un adjetivo que describe una API que cumple completamente con los principios de REST.
 
 Una API es RESTful si sigue estrictamente los siguientes principios:
+
 - Arquitectura cliente-servidor: Separación entre cliente (interfaz) y servidor (datos y lógica).
 
 - Stateless: Cada solicitud del cliente al servidor debe contener toda la información necesaria para entenderla.
@@ -39,3 +40,40 @@ Patrones de diseño:
 
 - Singleton para manejar el repositorio.
 - DTO para separar las entidades de dominio de los datos de respuesta o petición.
+
+## Configuración del Entorno
+
+Para ejecutar la aplicación localmente, necesitas configurar las variables de entorno. Sigue estos pasos:
+
+1. Crea un archivo `.env` en la raíz del proyecto basado en el ejemplo:
+
+```
+DB_URL=jdbc:mysql://localhost:3306/restaurant
+DB_USERNAME=tu_usuario
+DB_PASSWORD=tu_contraseña
+DB_DRIVER=com.mysql.cj.jdbc.Driver
+JPA_DDL_AUTO=update
+SHOW_SQL=true
+FORMAT_SQL=true
+PORT=8080
+```
+
+2. Asegúrate de tener MySQL instalado y una base de datos llamada `restaurant` creada.
+
+3. Para iniciar la aplicación con las variables de entorno del archivo `.env`, puedes usar plugins como [dotenv-gradle](https://github.com/uzzu/dotenv-gradle) o ejecutar:
+
+```bash
+# En Linux/Mac
+export $(grep -v '^#' .env | xargs) && ./gradlew bootRun
+
+# En Windows PowerShell
+foreach($line in Get-Content .env) {
+  if($line -match '^[^#]') {
+    $key, $value = $line -split '=', 2
+    [Environment]::SetEnvironmentVariable($key, $value)
+  }
+}
+./gradlew bootRun
+```
+
+**Nota:** El archivo `.env` está incluido en `.gitignore` para no compartir credenciales sensibles en el repositorio.
