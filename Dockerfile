@@ -40,5 +40,5 @@ ENV JAVA_OPTS="-Xmx512m -Xms256m"
 # Exponer el puerto
 EXPOSE 8080
 
-# Comando para ejecutar la aplicación con el driver
-ENTRYPOINT ["sh", "-c", "java $JAVA_OPTS -Dspring.profiles.active=prod -cp postgresql.jar:app.jar org.springframework.boot.loader.JarLauncher"] 
+# Comando para ejecutar la aplicación
+ENTRYPOINT ["sh", "-c", "java $JAVA_OPTS -Dspring.profiles.active=prod -jar app.jar"] 
