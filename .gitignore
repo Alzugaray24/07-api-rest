@@ -39,3 +39,11 @@ out/
 ### Environment Variables ###
 .env
 *.env
+db.properties
+
+### Logs ###
+/logs/
+*.log
+
+### Credenciales ###
+lib/postgresql.jar

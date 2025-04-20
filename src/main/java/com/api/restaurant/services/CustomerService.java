@@ -7,6 +7,8 @@ import com.api.restaurant.services.interfaces.ICustomerService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
+
+import jakarta.transaction.Transactional;
 import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -35,6 +37,7 @@ public class CustomerService implements ICustomerService {
     }
 
     @Override
+    @Transactional
     public Customer getCustomerById(Long id) {
         logger.debug("Buscando cliente con ID: {}", id);
         try {
@@ -43,6 +46,13 @@ public class CustomerService implements ICustomerService {
                         logger.warn("Cliente no encontrado con ID: {}", id);
                         return new RuntimeException("Cliente no encontrado con id: " + id);
                     });
+
+            // Inicializar órdenes de forma explícita para evitar
+            // LazyInitializationException
+            if (customer.getOrders() != null) {
+                customer.getOrders().size(); // Esto fuerza la inicialización
+            }
+
             logger.debug("Cliente encontrado: {}", customer.getName());
             return customer;
         } catch (Exception e) {
@@ -66,6 +76,7 @@ public class CustomerService implements ICustomerService {
     }
 
     @Override
+    @Transactional
     public Customer updateCustomer(Long id, Customer updatedCustomer) {
         logger.info("Actualizando cliente con ID: {}", id);
         try {
@@ -89,10 +100,19 @@ public class CustomerService implements ICustomerService {
     }
 
     @Override
+    @Transactional
     public List<Customer> getAllCustomers() {
         logger.debug("Obteniendo todos los clientes");
         try {
             List<Customer> customers = customerRepository.findAll();
+
+            // Inicializar órdenes de cada cliente de forma explícita
+            for (Customer customer : customers) {
+                if (customer.getOrders() != null) {
+                    customer.getOrders().size(); // Esto fuerza la inicialización
+                }
+            }
+
             logger.info("Se encontraron {} clientes", customers.size());
             return customers;
         } catch (Exception e) {
@@ -102,12 +122,23 @@ public class CustomerService implements ICustomerService {
     }
 
     @Override
+    @Transactional
     public List<Customer> getActiveCustomers() {
         logger.debug("Obteniendo clientes activos");
         try {
-            List<Customer> activeCustomers = customerRepository.findAll().stream()
+            List<Customer> customers = customerRepository.findAll();
+
+            List<Customer> activeCustomers = customers.stream()
                     .filter(Customer::isActive)
                     .collect(Collectors.toList());
+
+            // Inicializar órdenes de cada cliente activo de forma explícita
+            for (Customer customer : activeCustomers) {
+                if (customer.getOrders() != null) {
+                    customer.getOrders().size(); // Esto fuerza la inicialización
+                }
+            }
+
             logger.info("Se encontraron {} clientes activos", activeCustomers.size());
             return activeCustomers;
         } catch (Exception e) {
@@ -117,6 +148,7 @@ public class CustomerService implements ICustomerService {
     }
 
     @Override
+    @Transactional
     public Customer setCustomerStatus(Long id, boolean active) {
         logger.info("Cambiando estado del cliente con ID {}: activo={}", id, active);
         try {
@@ -135,6 +167,7 @@ public class CustomerService implements ICustomerService {
     }
 
     @Override
+    @Transactional
     public List<Order> getCustomerOrders(Long customerId) {
         logger.debug("Obteniendo pedidos del cliente con ID: {}", customerId);
         try {

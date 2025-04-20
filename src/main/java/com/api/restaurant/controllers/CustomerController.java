@@ -62,9 +62,22 @@ public class CustomerController {
             customers = customerService.getAllCustomers();
         }
 
+        // Asegurar que cada cliente tenga sus órdenes inicializadas antes de convertir
+        // a DTO
+        customers.forEach(customer -> {
+            if (customer.getOrders() != null) {
+                // Forzar la inicialización de las órdenes
+                customer.getOrders().size();
+            }
+        });
+
         List<CustomerResponseDTO> responses = customers.stream()
-                .map(CustomerResponseDTO::new)
+                .map(customer -> {
+                    CustomerResponseDTO dto = new CustomerResponseDTO(customer);
+                    return dto;
+                })
                 .collect(Collectors.toList());
+
         return ResponseEntity.ok(responses);
     }
 

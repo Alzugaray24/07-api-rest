@@ -1,7 +1,9 @@
 package com.api.restaurant.services;
 
+import com.api.restaurant.models.Dish;
 import com.api.restaurant.models.Menu;
 import com.api.restaurant.models.MenuItem;
+import com.api.restaurant.models.MenuItemCategory;
 import com.api.restaurant.repositories.MenuRepository;
 import com.api.restaurant.services.interfaces.IMenuService;
 import org.slf4j.Logger;
@@ -104,6 +106,38 @@ public class MenuService implements IMenuService {
                     });
         } catch (Exception e) {
             logger.error("Error al actualizar menú con ID {}: {}", id, e.getMessage());
+            throw e;
+        }
+    }
+
+    @Override
+    public Menu addItemToMenu(Long menuId, Dish dish, MenuItemCategory category, Double specialPrice,
+            boolean available) {
+        logger.info("Agregando plato {} al menú con ID: {}", dish.getName(), menuId);
+        try {
+            Menu menu = getMenuById(menuId);
+            if (menu == null) {
+                logger.warn("No se encontró el menú con ID: {}", menuId);
+                throw new RuntimeException("El menú con el id " + menuId + " no se ha encontrado");
+            }
+
+            // Crear el nuevo MenuItem
+            MenuItem menuItem = new MenuItem();
+            menuItem.setDish(dish);
+            menuItem.setCategory(category != null ? category : MenuItemCategory.MAIN_COURSE);
+            menuItem.setSpecialPrice(specialPrice);
+            menuItem.setAvailable(available);
+
+            // Agregar al menú
+            menu.addMenuItem(menuItem);
+            logger.debug("Agregado item {} al menú {}", dish.getName(), menu.getName());
+
+            // Guardar y retornar el menú actualizado
+            Menu updatedMenu = menuRepository.save(menu);
+            logger.info("Menú con ID {} actualizado con nuevo item {}", menuId, dish.getName());
+            return updatedMenu;
+        } catch (Exception e) {
+            logger.error("Error al agregar item al menú con ID {}: {}", menuId, e.getMessage());
             throw e;
         }
     }

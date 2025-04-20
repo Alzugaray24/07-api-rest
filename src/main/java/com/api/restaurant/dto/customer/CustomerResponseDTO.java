@@ -2,9 +2,11 @@ package com.api.restaurant.dto.customer;
 
 import com.api.restaurant.models.Customer;
 import com.api.restaurant.models.CustomerEnum;
+import com.api.restaurant.models.Order;
 import lombok.Getter;
 import lombok.Setter;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -25,20 +27,31 @@ public class CustomerResponseDTO {
         this.active = customer.isActive();
         this.type = customer.getType();
 
-        // Solo incluir órdenes si el cliente tiene alguna y si no es null
-        if (customer.getOrders() != null && !customer.getOrders().isEmpty()) {
+        // Modificación para garantizar que las órdenes se inicialicen correctamente
+        if (customer.getOrders() != null) {
             try {
-                this.orders = customer.getOrders().stream()
-                        .map(OrderSummaryDTO::new)
-                        .collect(Collectors.toList());
+                // Forzar inicialización para evitar LazyInitializationException
+                List<Order> customerOrders = new ArrayList<>(customer.getOrders());
+
+                if (!customerOrders.isEmpty()) {
+                    this.orders = customerOrders.stream()
+                            .map(OrderSummaryDTO::new)
+                            .collect(Collectors.toList());
+                } else {
+                    this.orders = new ArrayList<>();
+                }
             } catch (Exception e) {
-                // Si hay algún error, no incluir órdenes
-                this.orders = null;
+                // Si hay algún error, inicializar como lista vacía en lugar de null
+                this.orders = new ArrayList<>();
             }
+        } else {
+            // Inicializar como lista vacía en lugar de null
+            this.orders = new ArrayList<>();
         }
     }
 
     public CustomerResponseDTO() {
+        this.orders = new ArrayList<>();
     }
 
     // DTO interno para representar un resumen de la orden

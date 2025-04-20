@@ -25,7 +25,7 @@ public class Customer {
     @Enumerated(EnumType.STRING)
     private CustomerEnum type;
 
-    @OneToMany(mappedBy = "customer", cascade = CascadeType.ALL, orphanRemoval = true)
+    @OneToMany(mappedBy = "customer", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.EAGER)
     private List<Order> orders = new ArrayList<>();
 
     public Customer() {

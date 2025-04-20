@@ -31,47 +31,42 @@ public class MenuController {
 
     @PostMapping
     public ResponseEntity<MenuResponseDTO> saveMenu(@RequestBody MenuRequestDTO menuRequest) {
-        // Validar que el nombre no sea nulo o vacío
-        if (menuRequest.getName() == null || menuRequest.getName().trim().isEmpty()) {
+        try {
+            // Crear el menú a partir del DTO
+            Menu menu = new Menu();
+            menu.setName(menuRequest.getName());
+            menu.setActive(true);
+
+            // Crear la lista de ítems del menú
+            if (menuRequest.getItems() != null && !menuRequest.getItems().isEmpty()) {
+                for (com.api.restaurant.dto.menuitem.MenuItemRequestDTO itemDTO : menuRequest.getItems()) {
+                    if (itemDTO.getDishId() != null) {
+                        // Buscar el plato por ID
+                        Dish dish = dishService.getDishById(itemDTO.getDishId());
+                        if (dish != null) {
+                            // Crear el MenuItem y asignar valores
+                            MenuItem menuItem = new MenuItem();
+                            menuItem.setDish(dish);
+                            menuItem.setCategory(itemDTO.getCategory());
+                            menuItem.setSpecialPrice(itemDTO.getSpecialPrice());
+                            menuItem.setAvailable(itemDTO.isAvailable());
+
+                            // Agregar al menú
+                            menu.addMenuItem(menuItem);
+                        }
+                    }
+                }
+            }
+
+            // Guardar el menú
+            Menu savedMenu = menuService.saveMenu(menu);
+
+            // Devolver la respuesta
+            MenuResponseDTO response = new MenuResponseDTO(savedMenu);
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
             return ResponseEntity.badRequest().build();
         }
-
-        // Create a new menu
-        Menu menu = new Menu();
-        menu.setName(menuRequest.getName());
-        menu.setActive(menuRequest.isActive());
-
-        // Process menu items
-        List<MenuItem> menuItems = new ArrayList<>();
-        if (menuRequest.getItems() != null && !menuRequest.getItems().isEmpty()) {
-            for (var itemRequest : menuRequest.getItems()) {
-                // Validar que el dishId no sea nulo
-                if (itemRequest.getDishId() == null) {
-                    continue;
-                }
-
-                Dish dish = dishService.getDishById(itemRequest.getDishId());
-                if (dish == null) {
-                    continue;
-                }
-
-                MenuItem menuItem = new MenuItem();
-                menuItem.setDish(dish);
-                menuItem.setCategory(
-                        itemRequest.getCategory() != null ? itemRequest.getCategory() : determineDefaultCategory());
-                menuItem.setSpecialPrice(itemRequest.getSpecialPrice());
-                menuItem.setAvailable(itemRequest.isAvailable());
-                menuItem.setMenu(menu);
-                menuItems.add(menuItem);
-            }
-        }
-
-        menu.setMenuItems(menuItems);
-
-        // Save the menu
-        Menu savedMenu = menuService.saveMenu(menu);
-        MenuResponseDTO response = new MenuResponseDTO(savedMenu);
-        return ResponseEntity.ok(response);
     }
 
     @GetMapping("/{id}")
@@ -80,67 +75,63 @@ public class MenuController {
         if (menu == null) {
             return ResponseEntity.notFound().build();
         }
-        MenuResponseDTO response = new MenuResponseDTO(menu);
-        return ResponseEntity.ok(response);
+        return ResponseEntity.ok(new MenuResponseDTO(menu));
     }
 
     @GetMapping
     public ResponseEntity<List<MenuResponseDTO>> getAllMenus() {
         List<Menu> menus = menuService.getAllMenus();
-        List<MenuResponseDTO> responses = menus.stream()
+        List<MenuResponseDTO> menuDTOs = menus.stream()
                 .map(MenuResponseDTO::new)
                 .collect(Collectors.toList());
-        return ResponseEntity.ok(responses);
+        return ResponseEntity.ok(menuDTOs);
     }
 
     @PutMapping("/{id}")
     public ResponseEntity<MenuResponseDTO> updateMenu(@PathVariable Long id, @RequestBody MenuRequestDTO menuRequest) {
-        // Validar que el nombre no sea nulo o vacío
-        if (menuRequest.getName() == null || menuRequest.getName().trim().isEmpty()) {
+        try {
+            // Obtener el menú existente
+            Menu existingMenu = menuService.getMenuById(id);
+            if (existingMenu == null) {
+                return ResponseEntity.notFound().build();
+            }
+
+            // Actualizar propiedades básicas
+            existingMenu.setName(menuRequest.getName());
+
+            // Limpiar los ítems existentes
+            existingMenu.getMenuItems().clear();
+
+            // Agregar los nuevos ítems
+            if (menuRequest.getItems() != null) {
+                for (com.api.restaurant.dto.menuitem.MenuItemRequestDTO itemDTO : menuRequest.getItems()) {
+                    if (itemDTO.getDishId() != null) {
+                        // Buscar el plato por ID
+                        Dish dish = dishService.getDishById(itemDTO.getDishId());
+                        if (dish != null) {
+                            // Crear el MenuItem y asignar valores
+                            MenuItem menuItem = new MenuItem();
+                            menuItem.setDish(dish);
+                            menuItem.setCategory(itemDTO.getCategory());
+                            menuItem.setSpecialPrice(itemDTO.getSpecialPrice());
+                            menuItem.setAvailable(itemDTO.isAvailable());
+
+                            // Agregar al menú
+                            existingMenu.addMenuItem(menuItem);
+                        }
+                    }
+                }
+            }
+
+            // Actualizar el menú
+            Menu updatedMenu = menuService.updateMenu(id, existingMenu);
+
+            // Devolver la respuesta
+            MenuResponseDTO response = new MenuResponseDTO(updatedMenu);
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
             return ResponseEntity.badRequest().build();
         }
-
-        // Check if menu exists
-        Menu existingMenu = menuService.getMenuById(id);
-        if (existingMenu == null) {
-            return ResponseEntity.notFound().build();
-        }
-
-        // Create updated menu
-        Menu updatedMenu = new Menu();
-        updatedMenu.setName(menuRequest.getName());
-        updatedMenu.setActive(menuRequest.isActive());
-
-        // Process menu items
-        List<MenuItem> menuItems = new ArrayList<>();
-        if (menuRequest.getItems() != null && !menuRequest.getItems().isEmpty()) {
-            for (var itemRequest : menuRequest.getItems()) {
-                // Validar que el dishId no sea nulo
-                if (itemRequest.getDishId() == null) {
-                    continue;
-                }
-
-                Dish dish = dishService.getDishById(itemRequest.getDishId());
-                if (dish == null) {
-                    continue;
-                }
-
-                MenuItem menuItem = new MenuItem();
-                menuItem.setDish(dish);
-                menuItem.setCategory(
-                        itemRequest.getCategory() != null ? itemRequest.getCategory() : determineDefaultCategory());
-                menuItem.setSpecialPrice(itemRequest.getSpecialPrice());
-                menuItem.setAvailable(itemRequest.isAvailable());
-                menuItems.add(menuItem);
-            }
-        }
-
-        updatedMenu.setMenuItems(menuItems);
-
-        // Update the menu
-        Menu newMenu = menuService.updateMenu(id, updatedMenu);
-        MenuResponseDTO response = new MenuResponseDTO(newMenu);
-        return ResponseEntity.ok(response);
     }
 
     @DeleteMapping("/{id}")
@@ -163,44 +154,31 @@ public class MenuController {
             @PathVariable Long menuId,
             @RequestBody AddMenuItemRequestDTO itemRequest) {
 
-        // Validar el menuId y dishId
+        // Validar el request
         if (itemRequest.getDishId() == null) {
             return ResponseEntity.badRequest().build();
         }
 
-        // Obtener el menú
-        Menu menu = menuService.getMenuById(menuId);
-        if (menu == null) {
+        try {
+            // Obtener el plato
+            Dish dish = dishService.getDishById(itemRequest.getDishId());
+            if (dish == null) {
+                return ResponseEntity.notFound().build();
+            }
+
+            // Usar el servicio para agregar el item al menú
+            Menu updatedMenu = menuService.addItemToMenu(
+                    menuId,
+                    dish,
+                    itemRequest.getCategory(),
+                    itemRequest.getSpecialPrice(),
+                    itemRequest.isAvailable());
+
+            // Devolver el menú actualizado
+            MenuResponseDTO response = new MenuResponseDTO(updatedMenu);
+            return ResponseEntity.ok(response);
+        } catch (RuntimeException e) {
             return ResponseEntity.notFound().build();
         }
-
-        // Obtener el plato
-        Dish dish = dishService.getDishById(itemRequest.getDishId());
-        if (dish == null) {
-            return ResponseEntity.notFound().build();
-        }
-
-        // Crear el nuevo MenuItem
-        MenuItem menuItem = new MenuItem();
-        menuItem.setDish(dish);
-        menuItem.setCategory(
-                itemRequest.getCategory() != null ? itemRequest.getCategory() : determineDefaultCategory());
-        menuItem.setSpecialPrice(itemRequest.getSpecialPrice());
-        menuItem.setAvailable(itemRequest.isAvailable());
-
-        // Agregar el MenuItem al menú
-        menu.addMenuItem(menuItem);
-
-        // Guardar el menú actualizado
-        Menu updatedMenu = menuService.saveMenu(menu);
-
-        // Devolver el menú actualizado
-        MenuResponseDTO response = new MenuResponseDTO(updatedMenu);
-        return ResponseEntity.ok(response);
-    }
-
-    // Método auxiliar para determinar la categoría por defecto
-    private com.api.restaurant.models.MenuItemCategory determineDefaultCategory() {
-        return com.api.restaurant.models.MenuItemCategory.MAIN_COURSE;
     }
 }
