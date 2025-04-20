@@ -22,7 +22,7 @@ public class DishObserver implements Observer {
 
     @Override
     public void update(Order order) {
-        long dishCount = orderRepository.countByDishes_Id(dish.getId());
+        long dishCount = orderRepository.countByDishId(dish.getId());
         System.out.println("cantidad de platos vendidos" + dishCount);
         if (dishCount > 100) {
             dish.setType(DishEnum.POPULAR);

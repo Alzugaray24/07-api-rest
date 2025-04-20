@@ -1,18 +1,24 @@
 package com.api.restaurant.services;
 
 import com.api.restaurant.models.Order;
+import com.api.restaurant.models.OrderItem;
 import com.api.restaurant.observer.CustomerObserver;
 import com.api.restaurant.observer.DishObserver;
 import com.api.restaurant.observer.Observable;
 import com.api.restaurant.observer.Observer;
 import com.api.restaurant.repositories.OrderRepository;
+import com.api.restaurant.services.interfaces.IOrderService;
 import lombok.Getter;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
 
 @Service
-public class OrderService implements Observable {
+public class OrderService implements Observable, IOrderService {
+
+    private static final Logger logger = LoggerFactory.getLogger(OrderService.class);
 
     private final OrderRepository orderRepository;
     @Getter
@@ -20,65 +26,162 @@ public class OrderService implements Observable {
     private final CustomerService customerService;
     private final DishService dishService;
 
-
-
-    public OrderService(OrderRepository orderRepository, List<Observer> observers, CustomerService customerService, DishService dishService) {
+    public OrderService(OrderRepository orderRepository, List<Observer> observers, CustomerService customerService,
+            DishService dishService) {
         this.orderRepository = orderRepository;
         this.observers = observers;
         this.customerService = customerService;
         this.dishService = dishService;
     }
 
+    @Override
     public Order saveOrder(Order order) {
-        CustomerObserver customerObserver = new CustomerObserver(order.getCustomer(), orderRepository, customerService);
-        if (!observers.contains(customerObserver)) {
-            addObserver(customerObserver);
-        }
+        logger.info("Guardando nuevo pedido para cliente ID: {}", order.getCustomer().getId());
+        try {
+            order.getCustomer().addOrder(order);
+            logger.debug("Relación bidireccional establecida entre cliente {} y pedido", order.getCustomer().getName());
 
-        order.getDishes().forEach(dish -> {
-            DishObserver dishObserver = new DishObserver(dish, orderRepository, dishService);
-            if (!observers.contains(dishObserver)) {
-                addObserver(dishObserver);
+            CustomerObserver customerObserver = new CustomerObserver(order.getCustomer(), orderRepository,
+                    customerService);
+            if (!observers.contains(customerObserver)) {
+                addObserver(customerObserver);
+                logger.debug("Añadido observador de cliente para ID: {}", order.getCustomer().getId());
             }
-        });
 
-        Order savedOrder = orderRepository.save(order);
-        notifyObservers();
-        return savedOrder;
+            order.getOrderItems().forEach(item -> {
+                DishObserver dishObserver = new DishObserver(item.getDish(), orderRepository, dishService);
+                if (!observers.contains(dishObserver)) {
+                    addObserver(dishObserver);
+                    logger.debug("Añadido observador de plato para ID: {}", item.getDish().getId());
+                }
+            });
+
+            Order savedOrder = orderRepository.save(order);
+            logger.info("Pedido guardado con ID: {}, con {} items", savedOrder.getId(),
+                    savedOrder.getOrderItems().size());
+            notifyObservers();
+            logger.debug("Observadores notificados");
+            return savedOrder;
+        } catch (Exception e) {
+            logger.error("Error al guardar pedido: {}", e.getMessage());
+            throw e;
+        }
     }
 
+    @Override
     public Order getOrderById(Long id) {
-        return orderRepository.findById(id).orElse(null);
+        logger.debug("Buscando pedido con ID: {}", id);
+        try {
+            Order order = orderRepository.findById(id).orElse(null);
+            if (order == null) {
+                logger.info("No se encontró pedido con ID: {}", id);
+            } else {
+                logger.debug("Pedido encontrado con ID: {}, cliente: {}", id, order.getCustomer().getName());
+            }
+            return order;
+        } catch (Exception e) {
+            logger.error("Error al buscar pedido con ID {}: {}", id, e.getMessage());
+            throw e;
+        }
     }
 
+    @Override
+    public List<Order> getAllOrders() {
+        logger.debug("Obteniendo todos los pedidos");
+        try {
+            List<Order> orders = orderRepository.findAll();
+            logger.info("Se encontraron {} pedidos", orders.size());
+            return orders;
+        } catch (Exception e) {
+            logger.error("Error al obtener todos los pedidos: {}", e.getMessage());
+            throw e;
+        }
+    }
+
+    @Override
     public void deleteOrder(Long id) {
-        orderRepository.deleteById(id);
+        logger.info("Eliminando pedido con ID: {}", id);
+        try {
+            // Obtener el pedido antes de eliminarlo
+            Order order = orderRepository.findById(id).orElse(null);
+            if (order != null) {
+                // Eliminar la referencia en el cliente
+                order.getCustomer().removeOrder(order);
+                logger.debug("Eliminada referencia del pedido en el cliente {}", order.getCustomer().getName());
+            }
+
+            orderRepository.deleteById(id);
+            logger.info("Pedido con ID {} eliminado correctamente", id);
+        } catch (Exception e) {
+            logger.error("Error al eliminar pedido con ID {}: {}", id, e.getMessage());
+            throw e;
+        }
     }
 
+    @Override
     public Order updateOrder(Long id, Order updatedOrder) {
-        return orderRepository.findById(id)
-                .map(order -> {
-                    order.setCustomer(updatedOrder.getCustomer());
-                    order.setDishes(updatedOrder.getDishes());
-                    return orderRepository.save(order);
-                })
-                .orElseThrow(() -> new RuntimeException("El pedido con el id " + id + " no se ha encontrado"));
-    }
+        logger.info("Actualizando pedido con ID: {}", id);
+        try {
+            return orderRepository.findById(id)
+                    .map(order -> {
+                        // Si cambia el cliente, actualizar relaciones bidireccionales
+                        if (!order.getCustomer().equals(updatedOrder.getCustomer())) {
+                            // Eliminar de cliente anterior
+                            order.getCustomer().removeOrder(order);
+                            logger.debug("Eliminada relación con cliente anterior: {}", order.getCustomer().getName());
 
+                            // Agregar a nuevo cliente
+                            updatedOrder.getCustomer().addOrder(order);
+                            logger.debug("Establecida relación con nuevo cliente: {}",
+                                    updatedOrder.getCustomer().getName());
+                        }
+
+                        // Update customer
+                        order.setCustomer(updatedOrder.getCustomer());
+                        logger.debug("Cliente actualizado para pedido ID {}: {}", id,
+                                updatedOrder.getCustomer().getName());
+
+                        // Clear existing order items
+                        order.getOrderItems().clear();
+                        logger.debug("Items existentes eliminados para pedido ID {}", id);
+
+                        // Add new order items
+                        for (OrderItem item : updatedOrder.getOrderItems()) {
+                            item.setOrder(order);
+                            order.addOrderItem(item);
+                        }
+                        logger.debug("Añadidos {} items al pedido ID {}", updatedOrder.getOrderItems().size(), id);
+
+                        Order savedOrder = orderRepository.save(order);
+                        logger.info("Pedido con ID {} actualizado correctamente", id);
+                        return savedOrder;
+                    })
+                    .orElseThrow(() -> {
+                        logger.warn("No se encontró el pedido con ID {} para actualizar", id);
+                        return new RuntimeException("El pedido con el id " + id + " no se ha encontrado");
+                    });
+        } catch (Exception e) {
+            logger.error("Error al actualizar pedido con ID {}: {}", id, e.getMessage());
+            throw e;
+        }
+    }
 
     @Override
     public void addObserver(Observer observer) {
+        logger.debug("Añadiendo nuevo observador de tipo: {}", observer.getClass().getSimpleName());
         observers.add(observer);
     }
 
     @Override
     public void notifyObservers() {
+        logger.debug("Notificando a {} observadores", observers.size());
         List<Order> orders = orderRepository.findAll();
         if (!orders.isEmpty()) {
             Order latestOrder = orders.get(orders.size() - 1);
+            logger.debug("Notificando sobre el pedido más reciente, ID: {}", latestOrder.getId());
             observers.forEach(observer -> observer.update(latestOrder));
+        } else {
+            logger.warn("No hay pedidos para notificar a los observadores");
         }
-        orderRepository.findAll();
     }
-
 }

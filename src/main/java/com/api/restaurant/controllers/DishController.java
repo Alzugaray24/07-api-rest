@@ -27,6 +27,9 @@ public class DishController {
         Dish dish = new Dish();
         dish.setName(dishRequest.getName());
         dish.setPrice(dishRequest.getPrice());
+        if (dishRequest.getType() != null) {
+            dish.setType(dishRequest.getType());
+        }
         Dish savedDish = service.saveDish(dish);
         DishResponseDTO response = new DishResponseDTO(savedDish);
         return ResponseEntity.ok(response);
@@ -56,6 +59,9 @@ public class DishController {
         Dish updatedDish = new Dish();
         updatedDish.setName(dishRequest.getName());
         updatedDish.setPrice(dishRequest.getPrice());
+        if (dishRequest.getType() != null) {
+            updatedDish.setType(dishRequest.getType());
+        }
         Dish newDish = service.updateDish(id, updatedDish);
         if (newDish == null) {
             return ResponseEntity.notFound().build();

@@ -4,8 +4,8 @@ import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
 
-import java.util.HashSet;
-import java.util.Set;
+import java.util.ArrayList;
+import java.util.List;
 
 @Entity
 @Getter
@@ -14,14 +14,19 @@ public class Dish {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
+
     private String name;
+
     private double price;
 
     @Enumerated(EnumType.STRING)
     private DishEnum type = DishEnum.COMMON;
 
-    @ManyToMany(mappedBy = "dishes")
-    private Set<Menu> menus = new HashSet<>();
+    @OneToMany(mappedBy = "dish", cascade = CascadeType.ALL)
+    private List<MenuItem> menuItems = new ArrayList<>();
+
+    @OneToMany(mappedBy = "dish")
+    private List<OrderItem> orderItems = new ArrayList<>();
 
     public Dish() {
     }
@@ -29,5 +34,11 @@ public class Dish {
     public Dish(String name, double price) {
         this.name = name;
         this.price = price;
+    }
+
+    public Dish(String name, double price, DishEnum type) {
+        this.name = name;
+        this.price = price;
+        this.type = type;
     }
 }

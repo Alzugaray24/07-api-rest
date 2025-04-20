@@ -2,11 +2,10 @@ package com.api.restaurant.controllers;
 
 import com.api.restaurant.dto.order.OrderRequestDTO;
 import com.api.restaurant.dto.order.OrderResponseDTO;
-import com.api.restaurant.dto.customer.CustomerResponseDTO;
-import com.api.restaurant.dto.dish.DishResponseDTO;
 import com.api.restaurant.models.Order;
 import com.api.restaurant.models.Customer;
 import com.api.restaurant.models.Dish;
+import com.api.restaurant.models.OrderItem;
 import com.api.restaurant.services.OrderService;
 import com.api.restaurant.services.CustomerService;
 import com.api.restaurant.services.DishService;
@@ -14,8 +13,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.ArrayList;
 import java.util.List;
-import java.util.Objects;
 import java.util.stream.Collectors;
 
 @RestController
@@ -35,18 +34,39 @@ public class OrderController {
 
     @PostMapping
     public ResponseEntity<OrderResponseDTO> saveOrder(@RequestBody OrderRequestDTO orderRequest) {
-        Order order = new Order();
+        // Get the customer
         Customer customer = customerService.getCustomerById(orderRequest.getCustomerId());
-        List<Dish> dishes = orderRequest.getDishIds().stream()
-                .map(dishService::getDishById)
-                .collect(Collectors.toList());
+        if (customer == null) {
+            return ResponseEntity.badRequest().build();
+        }
+
+        // Create a new order
+        Order order = new Order();
         order.setCustomer(customer);
-        order.setDishes(dishes);
-        order.setTotal(dishes.stream()
-                .mapToDouble(Dish::getPrice)
-                .sum());
+
+        // Process order items
+        List<OrderItem> orderItems = new ArrayList<>();
+        for (var itemRequest : orderRequest.getItems()) {
+            Dish dish = dishService.getDishById(itemRequest.getDishId());
+            if (dish == null) {
+                continue;
+            }
+
+            OrderItem orderItem = new OrderItem();
+            orderItem.setDish(dish);
+            orderItem.setQuantity(itemRequest.getQuantity());
+            orderItem.setUnitPrice(dish.getPrice());
+            orderItem.setSpecialNotes(itemRequest.getSpecialNotes());
+            orderItem.setOrder(order);
+            orderItems.add(orderItem);
+        }
+
+        order.setOrderItems(orderItems);
+        order.recalculateTotal();
+
+        // Save the order
         Order savedOrder = orderService.saveOrder(order);
-        OrderResponseDTO response = convertToOrderResponseDTO(savedOrder);
+        OrderResponseDTO response = new OrderResponseDTO(savedOrder);
         return ResponseEntity.ok(response);
     }
 
@@ -56,52 +76,58 @@ public class OrderController {
         if (order == null) {
             return ResponseEntity.notFound().build();
         }
-        OrderResponseDTO response = convertToOrderResponseDTO(order);
+        OrderResponseDTO response = new OrderResponseDTO(order);
+        return ResponseEntity.ok(response);
+    }
+
+    @GetMapping
+    public ResponseEntity<List<OrderResponseDTO>> getAllOrders() {
+        List<Order> orders = orderService.getAllOrders();
+        List<OrderResponseDTO> response = orders.stream()
+                .map(OrderResponseDTO::new)
+                .collect(Collectors.toList());
         return ResponseEntity.ok(response);
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<OrderResponseDTO> updateOrder(@PathVariable Long id, @RequestBody OrderRequestDTO orderRequest) {
-        Customer customer = getCustomer(orderRequest.getCustomerId());
-        if (customer == null) {
+    public ResponseEntity<OrderResponseDTO> updateOrder(@PathVariable Long id,
+            @RequestBody OrderRequestDTO orderRequest) {
+        // Check if order exists
+        Order existingOrder = orderService.getOrderById(id);
+        if (existingOrder == null) {
             return ResponseEntity.notFound().build();
         }
 
-        List<Dish> dishes = getDishes(orderRequest.getDishIds());
-        if (dishes.isEmpty()) {
+        // Get the customer
+        Customer customer = customerService.getCustomerById(orderRequest.getCustomerId());
+        if (customer == null) {
             return ResponseEntity.badRequest().build();
         }
 
-        Order updatedOrder = createUpdatedOrder(id, customer, dishes);
-        Order newOrder = orderService.updateOrder(id, updatedOrder);
-        if (newOrder == null) {
-            return ResponseEntity.notFound().build();
+        // Create order items
+        List<OrderItem> orderItems = new ArrayList<>();
+        for (var itemRequest : orderRequest.getItems()) {
+            Dish dish = dishService.getDishById(itemRequest.getDishId());
+            if (dish == null) {
+                continue;
+            }
+
+            OrderItem orderItem = new OrderItem();
+            orderItem.setDish(dish);
+            orderItem.setQuantity(itemRequest.getQuantity());
+            orderItem.setUnitPrice(dish.getPrice());
+            orderItem.setSpecialNotes(itemRequest.getSpecialNotes());
+            orderItems.add(orderItem);
         }
 
-        OrderResponseDTO response = convertToOrderResponseDTO(newOrder);
+        // Update the order
+        Order updatedOrder = new Order();
+        updatedOrder.setCustomer(customer);
+        updatedOrder.setOrderItems(orderItems);
+
+        Order newOrder = orderService.updateOrder(id, updatedOrder);
+        OrderResponseDTO response = new OrderResponseDTO(newOrder);
         return ResponseEntity.ok(response);
-    }
-
-    private Customer getCustomer(Long customerId) {
-        return customerService.getCustomerById(customerId);
-    }
-
-    private List<Dish> getDishes(List<Long> dishIds) {
-        return dishIds.stream()
-                .map(dishService::getDishById)
-                .filter(Objects::nonNull)
-                .collect(Collectors.toList());
-    }
-
-    private Order createUpdatedOrder(Long id, Customer customer, List<Dish> dishes) {
-        Order order = new Order();
-        order.setId(id);
-        order.setCustomer(customer);
-        order.setDishes(dishes);
-        order.setTotal(dishes.stream()
-                .mapToDouble(Dish::getPrice)
-                .sum());
-        return order;
     }
 
     @DeleteMapping("/{id}")
@@ -112,16 +138,5 @@ public class OrderController {
         } catch (RuntimeException e) {
             return ResponseEntity.notFound().build();
         }
-    }
-
-    private OrderResponseDTO convertToOrderResponseDTO(Order order) {
-        OrderResponseDTO response = new OrderResponseDTO();
-        response.setId(order.getId());
-        response.setCustomer(new CustomerResponseDTO(order.getCustomer()));
-        response.setDishes(order.getDishes().stream()
-                .map(DishResponseDTO::new)
-                .collect(Collectors.toList()));
-        response.setTotal(order.getTotal());
-        return response;
     }
 }

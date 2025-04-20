@@ -3,10 +3,12 @@ package com.api.restaurant.controllers;
 import com.api.restaurant.dto.customer.CustomerRequestDTO;
 import com.api.restaurant.dto.customer.CustomerResponseDTO;
 import com.api.restaurant.models.Customer;
+import com.api.restaurant.models.Order;
 import com.api.restaurant.services.CustomerService;
 import com.api.restaurant.proxy.CustomerServiceProxy;
 import com.api.restaurant.services.interfaces.ICustomerService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -26,44 +28,91 @@ public class CustomerController {
 
     @PostMapping
     public ResponseEntity<CustomerResponseDTO> saveCustomer(@RequestBody CustomerRequestDTO customerRequest) {
-        Customer customer = new Customer();
-        customer.setName(customerRequest.getName());
+        Customer customer = new Customer(customerRequest.getName(), customerRequest.getEmail());
         customer.setType(customerRequest.getType());
+
+        if (customerRequest.getActive() != null) {
+            customer.setActive(customerRequest.getActive());
+        }
+
         Customer savedCustomer = customerService.saveCustomer(customer);
-        CustomerResponseDTO response = convertToCustomerResponseDTO(savedCustomer);
-        return ResponseEntity.ok(response);
+        CustomerResponseDTO response = new CustomerResponseDTO(savedCustomer);
+        return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 
     @GetMapping("/{id}")
     public ResponseEntity<CustomerResponseDTO> getCustomerById(@PathVariable Long id) {
-        Customer customer = customerService.getCustomerById(id);
-        if (customer == null) {
+        try {
+            Customer customer = customerService.getCustomerById(id);
+            CustomerResponseDTO response = new CustomerResponseDTO(customer);
+            return ResponseEntity.ok(response);
+        } catch (RuntimeException e) {
             return ResponseEntity.notFound().build();
         }
-        CustomerResponseDTO response = convertToCustomerResponseDTO(customer);
-        return ResponseEntity.ok(response);
     }
 
     @GetMapping
-    public ResponseEntity<List<CustomerResponseDTO>> getAllCustomers() {
-        List<Customer> customers = customerService.getAllCustomers();
+    public ResponseEntity<List<CustomerResponseDTO>> getAllCustomers(
+            @RequestParam(required = false, defaultValue = "false") boolean activeOnly) {
+
+        List<Customer> customers;
+        if (activeOnly) {
+            customers = customerService.getActiveCustomers();
+        } else {
+            customers = customerService.getAllCustomers();
+        }
+
         List<CustomerResponseDTO> responses = customers.stream()
-                .map(this::convertToCustomerResponseDTO)
+                .map(CustomerResponseDTO::new)
                 .collect(Collectors.toList());
         return ResponseEntity.ok(responses);
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<CustomerResponseDTO> updateCustomer(@PathVariable Long id, @RequestBody CustomerRequestDTO customerRequest) {
-        Customer updatedCustomer = new Customer();
-        updatedCustomer.setName(customerRequest.getName());
-        updatedCustomer.setType(customerRequest.getType());
-        Customer newCustomer = customerService.updateCustomer(id, updatedCustomer);
-        if (newCustomer == null) {
+    public ResponseEntity<CustomerResponseDTO> updateCustomer(@PathVariable Long id,
+            @RequestBody CustomerRequestDTO customerRequest) {
+        try {
+            Customer existingCustomer = customerService.getCustomerById(id);
+            existingCustomer.setName(customerRequest.getName());
+            existingCustomer.setEmail(customerRequest.getEmail());
+            existingCustomer.setType(customerRequest.getType());
+
+            if (customerRequest.getActive() != null) {
+                existingCustomer.setActive(customerRequest.getActive());
+            }
+
+            Customer updatedCustomer = customerService.updateCustomer(id, existingCustomer);
+            CustomerResponseDTO response = new CustomerResponseDTO(updatedCustomer);
+            return ResponseEntity.ok(response);
+        } catch (RuntimeException e) {
             return ResponseEntity.notFound().build();
         }
-        CustomerResponseDTO response = convertToCustomerResponseDTO(newCustomer);
-        return ResponseEntity.ok(response);
+    }
+
+    @PatchMapping("/{id}/status")
+    public ResponseEntity<CustomerResponseDTO> updateCustomerStatus(
+            @PathVariable Long id,
+            @RequestParam boolean active) {
+        try {
+            Customer customer = customerService.setCustomerStatus(id, active);
+            CustomerResponseDTO response = new CustomerResponseDTO(customer);
+            return ResponseEntity.ok(response);
+        } catch (RuntimeException e) {
+            return ResponseEntity.notFound().build();
+        }
+    }
+
+    @GetMapping("/{id}/orders")
+    public ResponseEntity<List<CustomerResponseDTO.OrderSummaryDTO>> getCustomerOrders(@PathVariable Long id) {
+        try {
+            List<Order> orders = customerService.getCustomerOrders(id);
+            List<CustomerResponseDTO.OrderSummaryDTO> orderSummaries = orders.stream()
+                    .map(CustomerResponseDTO.OrderSummaryDTO::new)
+                    .collect(Collectors.toList());
+            return ResponseEntity.ok(orderSummaries);
+        } catch (RuntimeException e) {
+            return ResponseEntity.notFound().build();
+        }
     }
 
     @DeleteMapping("/{id}")
@@ -74,13 +123,5 @@ public class CustomerController {
         } catch (RuntimeException e) {
             return ResponseEntity.notFound().build();
         }
-    }
-
-    private CustomerResponseDTO convertToCustomerResponseDTO(Customer customer) {
-        CustomerResponseDTO response = new CustomerResponseDTO();
-        response.setId(customer.getId());
-        response.setName(customer.getName());
-        response.setType(customer.getType());
-        return response;
     }
 }

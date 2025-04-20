@@ -8,11 +8,12 @@ import lombok.Setter;
 @Setter
 public class CustomerRequestDTO {
     private String name;
-
-    public CustomerEnum getType() {
-        return CustomerEnum.NORMAL;
-    }
+    private String email;
+    private Boolean active;
+    private CustomerEnum type;
 
     public CustomerRequestDTO() {
+        this.type = CustomerEnum.NORMAL;
+        this.active = true;
     }
 }
