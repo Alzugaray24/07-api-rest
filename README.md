@@ -77,3 +77,37 @@ foreach($line in Get-Content .env) {
 ```
 
 **Nota:** El archivo `.env` está incluido en `.gitignore` para no compartir credenciales sensibles en el repositorio.
+
+## Despliegue en Render con Docker
+
+Para desplegar esta aplicación en Render usando Docker, sigue estos pasos:
+
+1. Asegúrate de tener un repositorio Git con el código de la aplicación (incluyendo el Dockerfile).
+
+2. Regístrate en [Render](https://render.com/).
+
+3. En el Dashboard de Render, selecciona "New" y luego "Web Service".
+
+4. Conecta tu repositorio de GitHub.
+
+5. Configura el servicio:
+
+   - **Nombre**: Elige un nombre para tu aplicación
+   - **Entorno**: Selecciona "Docker"
+   - **Rama**: Selecciona la rama principal (main/master)
+   - **Plan**: Selecciona el plan gratuito
+
+6. En la sección de "Environment Variables", agrega las siguientes variables:
+
+   ```
+   DB_URL=[URL de tu base de datos externa]
+   DB_USERNAME=[Usuario de la base de datos]
+   DB_PASSWORD=[Contraseña de la base de datos]
+   DB_DRIVER=com.mysql.cj.jdbc.Driver
+   ```
+
+7. Haz clic en "Create Web Service".
+
+Render detectará automáticamente el Dockerfile y lo usará para construir y ejecutar tu aplicación.
+
+**Nota**: En el plan gratuito, la aplicación se suspenderá después de 15 minutos de inactividad y tardará aproximadamente 30 segundos en responder cuando reciba tráfico nuevamente.
