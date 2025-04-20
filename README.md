@@ -48,17 +48,22 @@ Para ejecutar la aplicación localmente, necesitas configurar las variables de e
 1. Crea un archivo `.env` en la raíz del proyecto basado en el ejemplo:
 
 ```
-DB_URL=jdbc:mysql://localhost:3306/restaurant
-DB_USERNAME=tu_usuario
+DB_URL=jdbc:postgresql://localhost:5432/restaurant
+DB_USERNAME=postgres
 DB_PASSWORD=tu_contraseña
-DB_DRIVER=com.mysql.cj.jdbc.Driver
+DB_DRIVER=org.postgresql.Driver
 JPA_DDL_AUTO=update
 SHOW_SQL=true
 FORMAT_SQL=true
 PORT=8080
+SPRING_JPA_DATABASE_PLATFORM=org.hibernate.dialect.PostgreSQLDialect
 ```
 
-2. Asegúrate de tener MySQL instalado y una base de datos llamada `restaurant` creada.
+2. Asegúrate de tener PostgreSQL instalado y una base de datos llamada `restaurant` creada:
+
+```sql
+CREATE DATABASE restaurant;
+```
 
 3. Para iniciar la aplicación con las variables de entorno del archivo `.env`, puedes usar plugins como [dotenv-gradle](https://github.com/uzzu/dotenv-gradle) o ejecutar:
 
@@ -86,27 +91,34 @@ Para desplegar esta aplicación en Render usando Docker, sigue estos pasos:
 
 2. Regístrate en [Render](https://render.com/).
 
-3. En el Dashboard de Render, selecciona "New" y luego "Web Service".
+3. **Crea una base de datos PostgreSQL en Render**:
 
-4. Conecta tu repositorio de GitHub.
+   - En el Dashboard de Render, selecciona "New" y luego "PostgreSQL"
+   - Configura un nombre y selecciona el plan gratuito
+   - Anota las credenciales generadas automáticamente
 
-5. Configura el servicio:
+4. En el Dashboard de Render, selecciona "New" y luego "Web Service".
+
+5. Conecta tu repositorio de GitHub.
+
+6. Configura el servicio:
 
    - **Nombre**: Elige un nombre para tu aplicación
    - **Entorno**: Selecciona "Docker"
    - **Rama**: Selecciona la rama principal (main/master)
    - **Plan**: Selecciona el plan gratuito
 
-6. En la sección de "Environment Variables", agrega las siguientes variables:
+7. En la sección de "Environment Variables", agrega las siguientes variables:
 
    ```
-   DB_URL=[URL de tu base de datos externa]
+   DB_URL=jdbc:postgresql://[HOST DE TU BD EN RENDER]:5432/[NOMBRE_BD]
    DB_USERNAME=[Usuario de la base de datos]
    DB_PASSWORD=[Contraseña de la base de datos]
-   DB_DRIVER=com.mysql.cj.jdbc.Driver
+   DB_DRIVER=org.postgresql.Driver
+   SPRING_JPA_DATABASE_PLATFORM=org.hibernate.dialect.PostgreSQLDialect
    ```
 
-7. Haz clic en "Create Web Service".
+8. Haz clic en "Create Web Service".
 
 Render detectará automáticamente el Dockerfile y lo usará para construir y ejecutar tu aplicación.
 
