@@ -12,12 +12,14 @@ public class DishResponseDTO {
     private String name;
     private double price;
     private DishEnum type;
+    private boolean active;
 
     public DishResponseDTO(Dish dish) {
         this.id = dish.getId();
         this.name = dish.getName();
         this.price = dish.getPrice();
         this.type = dish.getType();
+        this.active = dish.isActive();
     }
 
     public DishResponseDTO() {

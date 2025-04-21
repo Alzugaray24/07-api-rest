@@ -14,4 +14,8 @@ public interface IOrderService {
     void deleteOrder(Long id);
 
     Order updateOrder(Long id, Order updatedOrder);
+
+    Order setOrderStatus(Long id, boolean active);
+
+    List<Order> getActiveOrders();
 }

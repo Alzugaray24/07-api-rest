@@ -7,8 +7,10 @@ import lombok.Getter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
+import jakarta.transaction.Transactional;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 @Getter
@@ -26,6 +28,8 @@ public class DishService implements IDishService {
     public Dish saveDish(Dish dish) {
         logger.info("Guardando nuevo plato: {}", dish.getName());
         try {
+            // Asegurar que el plato está activo por defecto
+            dish.setActive(true);
             Dish savedDish = dishRepository.save(dish);
             logger.info("Plato guardado con ID: {}", savedDish.getId());
             return savedDish;
@@ -36,6 +40,7 @@ public class DishService implements IDishService {
     }
 
     @Override
+    @Transactional
     public Dish getDishById(Long id) {
         logger.debug("Buscando plato con ID: {}", id);
         try {
@@ -53,6 +58,7 @@ public class DishService implements IDishService {
     }
 
     @Override
+    @Transactional
     public List<Dish> getAllDishes() {
         logger.debug("Obteniendo todos los platos");
         try {
@@ -61,6 +67,23 @@ public class DishService implements IDishService {
             return dishes;
         } catch (Exception e) {
             logger.error("Error al obtener todos los platos: {}", e.getMessage());
+            throw e;
+        }
+    }
+
+    @Override
+    @Transactional
+    public List<Dish> getActiveDishes() {
+        logger.debug("Obteniendo todos los platos activos");
+        try {
+            List<Dish> dishes = dishRepository.findAll();
+            List<Dish> activeDishes = dishes.stream()
+                    .filter(Dish::isActive)
+                    .collect(Collectors.toList());
+            logger.info("Se encontraron {} platos activos", activeDishes.size());
+            return activeDishes;
+        } catch (Exception e) {
+            logger.error("Error al obtener platos activos: {}", e.getMessage());
             throw e;
         }
     }
@@ -78,6 +101,26 @@ public class DishService implements IDishService {
     }
 
     @Override
+    @Transactional
+    public Dish setDishStatus(Long id, boolean active) {
+        logger.info("Cambiando estado del plato con ID {}: activo={}", id, active);
+        try {
+            return dishRepository.findById(id).map(dish -> {
+                dish.setActive(active);
+                logger.debug("Estado del plato {} actualizado a: {}", dish.getName(), active);
+                return dishRepository.save(dish);
+            }).orElseThrow(() -> {
+                logger.warn("No se encontró el plato con ID {} para actualizar su estado", id);
+                return new RuntimeException("El plato con el id " + id + " no se ha encontrado");
+            });
+        } catch (Exception e) {
+            logger.error("Error al cambiar estado del plato con ID {}: {}", id, e.getMessage());
+            throw e;
+        }
+    }
+
+    @Override
+    @Transactional
     public Dish updateDish(Long id, Dish updatedDish) {
         logger.info("Actualizando plato con ID: {}", id);
         try {
@@ -86,6 +129,10 @@ public class DishService implements IDishService {
                 dish.setPrice(updatedDish.getPrice());
                 if (updatedDish.getType() != null) {
                     dish.setType(updatedDish.getType());
+                }
+                // Preservar el estado active a menos que se cambie explícitamente
+                if (updatedDish.isActive() != dish.isActive()) {
+                    dish.setActive(updatedDish.isActive());
                 }
                 logger.debug("Plato {} actualizado", dish.getName());
                 return dishRepository.save(dish); // Save the modified dish

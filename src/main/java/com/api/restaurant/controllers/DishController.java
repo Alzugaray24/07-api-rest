@@ -46,8 +46,14 @@ public class DishController {
     }
 
     @GetMapping
-    public ResponseEntity<List<DishResponseDTO>> getAllDishes() {
-        List<Dish> dishes = service.getAllDishes();
+    public ResponseEntity<List<DishResponseDTO>> getAllDishes(
+            @RequestParam(required = false, defaultValue = "false") boolean activeOnly) {
+        List<Dish> dishes;
+        if (activeOnly) {
+            dishes = service.getActiveDishes();
+        } else {
+            dishes = service.getAllDishes();
+        }
         List<DishResponseDTO> responses = dishes.stream()
                 .map(DishResponseDTO::new)
                 .collect(Collectors.toList());
@@ -68,6 +74,19 @@ public class DishController {
         }
         DishResponseDTO response = new DishResponseDTO(newDish);
         return ResponseEntity.ok(response);
+    }
+
+    @PatchMapping("/{id}/status")
+    public ResponseEntity<DishResponseDTO> updateDishStatus(
+            @PathVariable Long id,
+            @RequestParam boolean active) {
+        try {
+            Dish dish = service.setDishStatus(id, active);
+            DishResponseDTO response = new DishResponseDTO(dish);
+            return ResponseEntity.ok(response);
+        } catch (RuntimeException e) {
+            return ResponseEntity.notFound().build();
+        }
     }
 
     @DeleteMapping("/{id}")

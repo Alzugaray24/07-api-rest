@@ -89,6 +89,26 @@ public class OrderController {
         return ResponseEntity.ok(response);
     }
 
+    @GetMapping("/active")
+    public ResponseEntity<List<OrderResponseDTO>> getActiveOrders() {
+        List<Order> orders = orderService.getActiveOrders();
+        List<OrderResponseDTO> response = orders.stream()
+                .map(OrderResponseDTO::new)
+                .collect(Collectors.toList());
+        return ResponseEntity.ok(response);
+    }
+
+    @PatchMapping("/{id}/status")
+    public ResponseEntity<OrderResponseDTO> setOrderStatus(@PathVariable Long id, @RequestParam boolean active) {
+        try {
+            Order order = orderService.setOrderStatus(id, active);
+            OrderResponseDTO response = new OrderResponseDTO(order);
+            return ResponseEntity.ok(response);
+        } catch (RuntimeException e) {
+            return ResponseEntity.notFound().build();
+        }
+    }
+
     @PutMapping("/{id}")
     public ResponseEntity<OrderResponseDTO> updateOrder(@PathVariable Long id,
             @RequestBody OrderRequestDTO orderRequest) {

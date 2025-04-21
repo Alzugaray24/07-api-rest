@@ -27,6 +27,8 @@ public class OrderItem {
 
     private String specialNotes;
 
+    private boolean active = true;
+
     public OrderItem() {
         this.quantity = 1;
     }
@@ -40,5 +42,10 @@ public class OrderItem {
     public OrderItem(Dish dish, Integer quantity, String specialNotes) {
         this(dish, quantity);
         this.specialNotes = specialNotes;
+    }
+
+    // Helper method to calculate subtotal
+    public double getSubtotal() {
+        return quantity * unitPrice;
     }
 }

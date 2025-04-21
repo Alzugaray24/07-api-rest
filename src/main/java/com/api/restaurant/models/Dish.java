@@ -22,6 +22,8 @@ public class Dish {
     @Enumerated(EnumType.STRING)
     private DishEnum type = DishEnum.COMMON;
 
+    private boolean active = true;
+
     @OneToMany(mappedBy = "dish", cascade = CascadeType.ALL)
     private List<MenuItem> menuItems = new ArrayList<>();
 

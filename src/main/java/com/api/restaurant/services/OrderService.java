@@ -12,8 +12,10 @@ import lombok.Getter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
+import com.api.restaurant.exceptions.ResourceNotFoundException;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 public class OrderService implements Observable, IOrderService {
@@ -120,50 +122,29 @@ public class OrderService implements Observable, IOrderService {
 
     @Override
     public Order updateOrder(Long id, Order updatedOrder) {
-        logger.info("Actualizando pedido con ID: {}", id);
-        try {
-            return orderRepository.findById(id)
-                    .map(order -> {
-                        // Si cambia el cliente, actualizar relaciones bidireccionales
-                        if (!order.getCustomer().equals(updatedOrder.getCustomer())) {
-                            // Eliminar de cliente anterior
-                            order.getCustomer().removeOrder(order);
-                            logger.debug("Eliminada relación con cliente anterior: {}", order.getCustomer().getName());
-
-                            // Agregar a nuevo cliente
-                            updatedOrder.getCustomer().addOrder(order);
-                            logger.debug("Establecida relación con nuevo cliente: {}",
-                                    updatedOrder.getCustomer().getName());
-                        }
-
-                        // Update customer
-                        order.setCustomer(updatedOrder.getCustomer());
-                        logger.debug("Cliente actualizado para pedido ID {}: {}", id,
-                                updatedOrder.getCustomer().getName());
-
-                        // Clear existing order items
-                        order.getOrderItems().clear();
-                        logger.debug("Items existentes eliminados para pedido ID {}", id);
-
-                        // Add new order items
-                        for (OrderItem item : updatedOrder.getOrderItems()) {
-                            item.setOrder(order);
-                            order.addOrderItem(item);
-                        }
-                        logger.debug("Añadidos {} items al pedido ID {}", updatedOrder.getOrderItems().size(), id);
-
-                        Order savedOrder = orderRepository.save(order);
-                        logger.info("Pedido con ID {} actualizado correctamente", id);
-                        return savedOrder;
-                    })
-                    .orElseThrow(() -> {
-                        logger.warn("No se encontró el pedido con ID {} para actualizar", id);
-                        return new RuntimeException("El pedido con el id " + id + " no se ha encontrado");
-                    });
-        } catch (Exception e) {
-            logger.error("Error al actualizar pedido con ID {}: {}", id, e.getMessage());
-            throw e;
+        if (orderRepository.existsById(id)) {
+            logger.debug("Updating order with id: {}", id);
+            updatedOrder.setId(id);
+            return orderRepository.save(updatedOrder);
         }
+        logger.error("Order with id {} not found for update", id);
+        throw new ResourceNotFoundException("Order with ID " + id + " not found");
+    }
+
+    @Override
+    public Order setOrderStatus(Long id, boolean active) {
+        Order order = getOrderById(id);
+        logger.info("Changing active status of order with id: {} to: {}", id, active);
+        order.setActive(active);
+        return orderRepository.save(order);
+    }
+
+    @Override
+    public List<Order> getActiveOrders() {
+        logger.info("Retrieving all active orders");
+        return orderRepository.findAll().stream()
+                .filter(Order::isActive)
+                .collect(Collectors.toList());
     }
 
     @Override
